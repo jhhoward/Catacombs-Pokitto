@@ -74,7 +74,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)\..\..\Arduboy3D;$(ProjectDir)\..\SDL\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\..\..\Catacombs;$(ProjectDir)\..\SDL\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(ProjectDir)\..\SDL\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -116,40 +116,40 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\Arduboy3D\Draw.cpp" />
-    <ClCompile Include="..\..\Arduboy3D\Enemy.cpp" />
-    <ClCompile Include="..\..\Arduboy3D\Entity.cpp" />
-    <ClCompile Include="..\..\Arduboy3D\FixedMath.cpp" />
-    <ClCompile Include="..\..\Arduboy3D\Font.cpp" />
-    <ClCompile Include="..\..\Arduboy3D\Game.cpp" />
-    <ClCompile Include="..\..\Arduboy3D\Map.cpp" />
-    <ClCompile Include="..\..\Arduboy3D\MapGenerator.cpp" />
-    <ClCompile Include="..\..\Arduboy3D\Menu.cpp" />
-    <ClCompile Include="..\..\Arduboy3D\Particle.cpp" />
-    <ClCompile Include="..\..\Arduboy3D\Player.cpp" />
-    <ClCompile Include="..\..\Arduboy3D\Projectile.cpp" />
-    <ClCompile Include="..\..\Arduboy3D\Sounds.cpp" />
+    <ClCompile Include="..\..\Catacombs\Draw.cpp" />
+    <ClCompile Include="..\..\Catacombs\Enemy.cpp" />
+    <ClCompile Include="..\..\Catacombs\Entity.cpp" />
+    <ClCompile Include="..\..\Catacombs\FixedMath.cpp" />
+    <ClCompile Include="..\..\Catacombs\Font.cpp" />
+    <ClCompile Include="..\..\Catacombs\Game.cpp" />
+    <ClCompile Include="..\..\Catacombs\Map.cpp" />
+    <ClCompile Include="..\..\Catacombs\MapGenerator.cpp" />
+    <ClCompile Include="..\..\Catacombs\Menu.cpp" />
+    <ClCompile Include="..\..\Catacombs\Particle.cpp" />
+    <ClCompile Include="..\..\Catacombs\Player.cpp" />
+    <ClCompile Include="..\..\Catacombs\Projectile.cpp" />
+    <ClCompile Include="..\..\Catacombs\Sounds.cpp" />
     <ClCompile Include="lodepng.cpp" />
     <ClCompile Include="WinMain.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Arduboy3D\Defines.h" />
-    <ClInclude Include="..\..\Arduboy3D\Draw.h" />
-    <ClInclude Include="..\..\Arduboy3D\Enemy.h" />
-    <ClInclude Include="..\..\Arduboy3D\Entity.h" />
-    <ClInclude Include="..\..\Arduboy3D\FixedMath.h" />
-    <ClInclude Include="..\..\Arduboy3D\Font.h" />
-    <ClInclude Include="..\..\Arduboy3D\Game.h" />
-    <ClInclude Include="..\..\Arduboy3D\LUT.h" />
-    <ClInclude Include="..\..\Arduboy3D\Map.h" />
-    <ClInclude Include="..\..\Arduboy3D\MapGenerator.h" />
-    <ClInclude Include="..\..\Arduboy3D\Menu.h" />
-    <ClInclude Include="..\..\Arduboy3D\Particle.h" />
-    <ClInclude Include="..\..\Arduboy3D\Platform.h" />
-    <ClInclude Include="..\..\Arduboy3D\Player.h" />
-    <ClInclude Include="..\..\Arduboy3D\Projectile.h" />
-    <ClInclude Include="..\..\Arduboy3D\Sounds.h" />
-    <ClInclude Include="..\..\Arduboy3D\Textures.h" />
+    <ClInclude Include="..\..\Catacombs\Defines.h" />
+    <ClInclude Include="..\..\Catacombs\Draw.h" />
+    <ClInclude Include="..\..\Catacombs\Enemy.h" />
+    <ClInclude Include="..\..\Catacombs\Entity.h" />
+    <ClInclude Include="..\..\Catacombs\FixedMath.h" />
+    <ClInclude Include="..\..\Catacombs\Font.h" />
+    <ClInclude Include="..\..\Catacombs\Game.h" />
+    <ClInclude Include="..\..\Catacombs\LUT.h" />
+    <ClInclude Include="..\..\Catacombs\Map.h" />
+    <ClInclude Include="..\..\Catacombs\MapGenerator.h" />
+    <ClInclude Include="..\..\Catacombs\Menu.h" />
+    <ClInclude Include="..\..\Catacombs\Particle.h" />
+    <ClInclude Include="..\..\Catacombs\Platform.h" />
+    <ClInclude Include="..\..\Catacombs\Player.h" />
+    <ClInclude Include="..\..\Catacombs\Projectile.h" />
+    <ClInclude Include="..\..\Catacombs\Sounds.h" />
+    <ClInclude Include="..\..\Catacombs\Textures.h" />
     <ClInclude Include="lodepng.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

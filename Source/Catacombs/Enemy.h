@@ -74,9 +74,9 @@ private:
 	bool TryPickCell(int8_t newX, int8_t newY);
 	uint8_t GetPlayerCellDistance() const;
 
-	EnemyType type : 3;
-	EnemyState state : 3;
-	uint8_t frameDelay : 2;
+	EnemyType type;
+	EnemyState state;
+	uint8_t frameDelay;
 	uint8_t hp;
 	uint8_t targetCellX, targetCellY;
 };

@@ -40,8 +40,8 @@ struct QueuedDrawable
 		struct ParticleSystem* particleSystem;
 	};
 	
-	DrawableType type : 1;
-	bool invert : 1;
+	DrawableType type;
+	bool invert;
 	int8_t x;
 	int8_t y;
 	uint8_t halfSize;
@@ -96,7 +96,7 @@ private:
 	static void DrawCells();
 	static void DrawWeapon();
 	static void DrawHUD();
-	static void DrawBar(uint8_t* screenPtr, const uint8_t* iconData, uint8_t amount, uint8_t max);
+	static void DrawBar(int y, const uint8_t* iconData, uint8_t amount, uint8_t max);
 	static void DrawDamageIndicator();
 	
 	static void QueueSprite(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, bool invert = false);

@@ -10,8 +10,7 @@
 void Font::PrintString(const char* str, uint8_t line, uint8_t x, uint8_t colour)
 {
 	uint8_t* screenPtr = Platform::GetScreenBuffer();
-	uint8_t xorMask = colour == COLOUR_BLACK ? 0 : 0xff;
-	screenPtr += DISPLAY_WIDTH * line + x;
+	int y = line * 8;
 
 	for (;;)
 	{
@@ -19,20 +18,19 @@ void Font::PrintString(const char* str, uint8_t line, uint8_t x, uint8_t colour)
 		if (!c)
 			break;
 
-		DrawChar(screenPtr, c, xorMask);
-		screenPtr += glyphWidth;
+		DrawChar(x, y, c, colour);
+		x += glyphWidth;
 	}
 }
 
 void Font::PrintInt(uint16_t val, uint8_t line, uint8_t x, uint8_t colour)
 {
 	uint8_t* screenPtr = Platform::GetScreenBuffer();
-	uint8_t xorMask = colour == COLOUR_BLACK ? 0 : 0xff;
-	screenPtr += DISPLAY_WIDTH * line + x;
+	int y = line * 8;
 
 	if (val == 0)
 	{
-		DrawChar(screenPtr, '0', xorMask);
+		DrawChar(x, y, '0', colour);
 		return;
 	}
 
@@ -49,20 +47,25 @@ void Font::PrintInt(uint16_t val, uint8_t line, uint8_t x, uint8_t colour)
 
 	for (int n = bufCount - 1; n >= 0; n--)
 	{
-		DrawChar(screenPtr, buffer[n], xorMask);
-		screenPtr += glyphWidth;
+		DrawChar(x, y, buffer[n], colour);
+		x += glyphWidth;
 	}
 
 }
 
-void Font::DrawChar(uint8_t* screenPtr, char c, uint8_t xorMask)
+void Font::DrawChar(int x, int y, char c, uint8_t colour)
 {
 	const uint8_t index = ((unsigned char)(c)) - firstGlyphIndex;
 	const uint8_t* fontPtr = fontPageData + glyphWidth * index;
 
-	screenPtr[0] = xorMask ^ pgm_read_byte(&fontPtr[0]);
-	screenPtr[1] = xorMask ^ pgm_read_byte(&fontPtr[1]);
-	screenPtr[2] = xorMask ^ pgm_read_byte(&fontPtr[2]);
-	screenPtr[3] = xorMask ^ pgm_read_byte(&fontPtr[3]);
+    for(int i = 0; i < glyphWidth; i++)
+    {
+        uint8_t slice = fontPtr[i];
+        for(int j = 0; j < glyphHeight; j++)
+        {
+            uint8_t outColour = (slice & (1 << j)) == 0 ? colour : !colour;
+            Platform::PutPixel(x + i, y + j, outColour);
+        }
+    }
 }
 

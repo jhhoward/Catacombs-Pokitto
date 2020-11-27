@@ -1,6 +1,6 @@
 #pragma once
 
-#if _WIN32
+#if defined(_WIN32) || defined(POKITTO) || defined(POK_SIM)
 #include <stdint.h>
 #include <string.h>
 #define PROGMEM
@@ -14,7 +14,10 @@
 //#define pgm_read_ptr pgm_read_word
 #endif
 
-#ifdef _WIN32
+#if defined(POKITTO) || defined(POK_SIM)
+#define DISPLAY_WIDTH 110
+#define DISPLAY_HEIGHT 88
+#elif defined(_WIN32)
 #define DISPLAY_WIDTH 128
 #define DISPLAY_HEIGHT 64
 #else
@@ -31,6 +34,7 @@
 #define INPUT_DOWN 8
 #define INPUT_A 16
 #define INPUT_B 32
+#define INPUT_START 64
 
 #define COLOUR_WHITE 1
 #define COLOUR_BLACK 0

@@ -17,5 +17,5 @@ public:
 	static void PrintInt(uint16_t value, uint8_t line, uint8_t x, uint8_t xorMask = COLOUR_BLACK);
 
 private:
-	static void DrawChar(uint8_t* screenPtr, char c, uint8_t xorMask);
+	static void DrawChar(int x, int y, char c, uint8_t colour);
 };

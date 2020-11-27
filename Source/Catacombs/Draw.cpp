@@ -192,7 +192,7 @@ void Renderer::DrawWallSegment(int16_t x1, int16_t w1, int16_t x2, int16_t w2, b
 	for (int x = x1; x < DISPLAY_WIDTH; x++)
 	{
 		bool drawSlice = x >= 0 && wBuffer[x] < w;
-		bool shadeSlice = shadeEdge && (x & 1) == 0;		
+		bool shadeSlice = shadeEdge;// && (x & 1) == 0;		
 		
 		int8_t horizon = horizonBuffer[x];
 
@@ -784,17 +784,168 @@ void Renderer::DrawCells()
 	}	
 }
 
-void DrawScaledOutline(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, uint8_t shiftAmount, bool invert)
+void DrawScaledOutline(const uint16_t* data, int x, int y, uint8_t halfSize, uint8_t inverseCameraDistance, uint8_t colour)
+{
+	uint8_t size = 2 * halfSize;
+
+	int i0 = x < 0 ? -x : 0;
+	int i1 = x + size > DISPLAY_WIDTH ? DISPLAY_WIDTH - x : size;
+	int j0 = y < 0 ? -y : 0;
+	int j1 = y + size > DISPLAY_HEIGHT ? DISPLAY_HEIGHT - y : size;
+
+	int outX = x >= 0 ? x : 0;
+
+	uint16_t leftTransparencyAndColourColumn = 0;
+	uint16_t middleTransparencyColumn = 0;
+	uint16_t rightTransparencyColumn = 0;
+	uint16_t middleColourColumn = 0;
+	uint16_t rightColourColumn = 0;
+	bool wasVisible = false;
+
+	for (int i = i0; i < i1; i++)
+	{
+		const bool isVisible = Renderer::wBuffer[outX] < inverseCameraDistance;
+
+		if (isVisible)
+		{
+			uint16_t leftRightOutlineColumn = 0;
+
+			if(i >= i1 - 2)
+			{
+				if (wasVisible)
+				{
+					leftTransparencyAndColourColumn = middleColourColumn & middleTransparencyColumn;
+					middleColourColumn = rightColourColumn;
+					middleTransparencyColumn = rightTransparencyColumn;
+					rightTransparencyColumn = 0;
+					rightColourColumn = 0;
+					leftRightOutlineColumn = leftTransparencyAndColourColumn;
+				}
+				else
+				{
+					break;
+				}
+			}
+			else
+			{
+				int u = (i * 16) / size;
+
+				if (wasVisible)
+				{
+					leftTransparencyAndColourColumn = middleColourColumn & middleTransparencyColumn;
+					middleColourColumn = rightColourColumn;
+					middleTransparencyColumn = rightTransparencyColumn;
+					rightTransparencyColumn = pgm_read_word(&data[u * 2]);
+					rightColourColumn = pgm_read_word(&data[u * 2 + 1]);
+					leftRightOutlineColumn = leftTransparencyAndColourColumn | (rightColourColumn & rightTransparencyColumn);
+				}
+				else
+				{
+					leftTransparencyAndColourColumn = 0;
+					rightTransparencyColumn = pgm_read_word(&data[u * 2]);
+					rightColourColumn = pgm_read_word(&data[u * 2 + 1]);
+					middleColourColumn = rightColourColumn;
+					middleTransparencyColumn = rightTransparencyColumn;
+					leftRightOutlineColumn = (rightColourColumn & rightTransparencyColumn);
+				}
+			}
+			
+			int8_t outY = y >= 0 ? y : 0;
+			//uint8_t bufferPos = (outY & 7);
+			//uint8_t* screenBuffer = Platform::GetScreenBuffer() + outX + ((outY & 0x38) << 4);
+			uint8_t* screenBuffer = Platform::GetScreenBuffer() + outX + outY * DISPLAY_WIDTH;
+			//uint8_t localBuffer = *screenBuffer;
+			//uint8_t writeMask = pgm_read_byte(&scaleDrawWriteMasks[bufferPos]);
+			
+			bool upIsOpaqueAndWhite = false;
+			bool middleIsOpaque = false;
+			bool downIsOpaque = false;
+			bool middleIsWhite = false;
+			bool downIsWhite = false;
+			bool leftOrRightIsOutline = false;
+			bool downLeftOrRightIsOutline = false;
+			
+			for (uint8_t j = j0; j < j1; j++)
+			{
+				upIsOpaqueAndWhite = middleIsOpaque && middleIsWhite;
+				middleIsOpaque = downIsOpaque;
+				middleIsWhite = downIsWhite;
+				leftOrRightIsOutline = downLeftOrRightIsOutline;
+
+				if(j >= j1 - 2)
+				{
+					downIsOpaque = false;
+					downIsWhite = false;
+					downLeftOrRightIsOutline = false;
+				}
+				else
+				{
+					uint8_t v = (j * 16) / size;
+					uint16_t mask = pgm_read_word(&scaleDrawReadMasks[v]);
+					downLeftOrRightIsOutline = (leftRightOutlineColumn & mask) != 0;
+					downIsOpaque = (middleTransparencyColumn & mask) != 0;
+					downIsWhite = (middleColourColumn & mask) != 0;
+				}
+					
+				if (middleIsOpaque && j < j1)
+				{
+					if(middleIsWhite)
+					{
+						*screenBuffer = COLOUR_WHITE;
+						//localBuffer |= writeMask;
+					}
+					else
+					{
+						*screenBuffer = COLOUR_BLACK;
+						//localBuffer &= ~writeMask;
+					}
+				}
+				else if(leftOrRightIsOutline || (upIsOpaqueAndWhite) || (downIsOpaque && downIsWhite))
+				{
+					*screenBuffer = COLOUR_BLACK;
+					//localBuffer &= ~writeMask;
+				}
+					
+				outY++;
+				/*bufferPos++;
+				writeMask <<= 1;
+					
+				if(bufferPos == 8)
+				{
+					bufferPos = 0;
+					writeMask = 1;
+						
+					*screenBuffer = localBuffer;
+					if(outY < DISPLAY_HEIGHT)
+					{
+						screenBuffer += 128;
+					}
+					localBuffer = *screenBuffer;
+				}*/
+				screenBuffer += DISPLAY_WIDTH;
+				
+			}
+
+			//*screenBuffer = localBuffer;
+		}
+
+		outX++;
+		wasVisible = isVisible;
+	}
+    
+}
+
+void DrawScaledOutlineOld(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, uint8_t shiftAmount, bool invert)
 {
 	uint8_t size = 2 * halfSize;
 	const uint8_t* lut = scaleLUT + (((halfSize - 1) >> shiftAmount) * ((halfSize - 1) >> shiftAmount));
 
-	uint8_t i0 = x < 0 ? -x : 0;
-	uint8_t i1 = x + size > DISPLAY_WIDTH ? DISPLAY_WIDTH - x : size;
-	uint8_t j0 = y < 0 ? -y : 0;
-	uint8_t j1 = y + size > DISPLAY_HEIGHT ? DISPLAY_HEIGHT - y : size;
+	int i0 = x < 0 ? -x : 0;
+	int i1 = x + size > DISPLAY_WIDTH ? DISPLAY_WIDTH - x : size;
+	int j0 = y < 0 ? -y : 0;
+	int j1 = y + size > DISPLAY_HEIGHT ? DISPLAY_HEIGHT - y : size;
 
-	int8_t outX = x >= 0 ? x : 0;
+	int outX = x >= 0 ? x : 0;
 	uint16_t invertMask = invert ? 0xffff : 0;
 	
 	uint16_t leftTransparencyAndColourColumn = 0;
@@ -804,7 +955,7 @@ void DrawScaledOutline(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSiz
 	uint16_t rightColourColumn = 0;
 	bool wasVisible = false;
 
-	for (uint8_t i = i0; i < i1; i++)
+	for (int i = i0; i < i1; i++)
 	{
 		const bool isVisible = Renderer::wBuffer[outX] < inverseCameraDistance;
 
@@ -853,10 +1004,11 @@ void DrawScaledOutline(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSiz
 			}
 			
 			int8_t outY = y >= 0 ? y : 0;
-			uint8_t bufferPos = (outY & 7);
-			uint8_t* screenBuffer = Platform::GetScreenBuffer() + outX + ((outY & 0x38) << 4);
-			uint8_t localBuffer = *screenBuffer;
-			uint8_t writeMask = pgm_read_byte(&scaleDrawWriteMasks[bufferPos]);
+			//uint8_t bufferPos = (outY & 7);
+			//uint8_t* screenBuffer = Platform::GetScreenBuffer() + outX + ((outY & 0x38) << 4);
+			uint8_t* screenBuffer = Platform::GetScreenBuffer() + outX + outY * DISPLAY_WIDTH;
+			//uint8_t localBuffer = *screenBuffer;
+			//uint8_t writeMask = pgm_read_byte(&scaleDrawWriteMasks[bufferPos]);
 			
 			bool upIsOpaqueAndWhite = false;
 			bool middleIsOpaque = false;
@@ -892,20 +1044,23 @@ void DrawScaledOutline(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSiz
 				{
 					if(middleIsWhite)
 					{
-						localBuffer |= writeMask;
+						*screenBuffer = COLOUR_WHITE;
+						//localBuffer |= writeMask;
 					}
 					else
 					{
-						localBuffer &= ~writeMask;
+						*screenBuffer = COLOUR_BLACK;
+						//localBuffer &= ~writeMask;
 					}
 				}
 				else if(leftOrRightIsOutline || (upIsOpaqueAndWhite) || (downIsOpaque && downIsWhite))
 				{
-					localBuffer &= ~writeMask;
+					*screenBuffer = COLOUR_BLACK;
+					//localBuffer &= ~writeMask;
 				}
 					
 				outY++;
-				bufferPos++;
+				/*bufferPos++;
 				writeMask <<= 1;
 					
 				if(bufferPos == 8)
@@ -919,11 +1074,12 @@ void DrawScaledOutline(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSiz
 						screenBuffer += 128;
 					}
 					localBuffer = *screenBuffer;
-				}
+				}*/
+				screenBuffer += DISPLAY_WIDTH;
 				
 			}
 
-			*screenBuffer = localBuffer;
+			//*screenBuffer = localBuffer;
 		}
 
 		outX++;
@@ -1010,21 +1166,9 @@ inline void DrawScaledNoOutline(const uint16_t* data, int8_t x, int8_t y, uint8_
 
 void Renderer::DrawScaled(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, bool invert)
 {
-	if (halfSize > MAX_SPRITE_SIZE * 2)
+	if (halfSize > 2)
 	{
-		return;
-	}
-	else if (halfSize > MAX_SPRITE_SIZE)
-	{
-		DrawScaledInner(data, x, y, halfSize, inverseCameraDistance, 2, invert);
-	}
-	else if (halfSize * 2 > MAX_SPRITE_SIZE)
-	{
-		DrawScaledInner(data, x, y, halfSize, inverseCameraDistance, 1, invert);
-	}
-	else if(halfSize > 2)
-	{
-		DrawScaledInner(data, x, y, halfSize, inverseCameraDistance, 0, invert);
+		DrawScaledOutline(data, x, y, halfSize, inverseCameraDistance, invert ? 1 : 0);
 	}
 	else if (halfSize == 2)
 	{
@@ -1232,23 +1376,24 @@ void Renderer::DrawWeapon()
 void Renderer::DrawBackground()
 {
 	uint8_t* ptr = Platform::GetScreenBuffer();
-	uint8_t counter = 128;
+	int counter = DISPLAY_WIDTH * DISPLAY_HEIGHT / 2;
 
 	while (counter--)
 	{
-		*ptr++ = 0x55; *ptr++ = 0x00; *ptr++ = 0xaa; *ptr++ = 0x00;
+		*ptr++ = 0x55;
 	}
 
-	counter = 128;
+	counter = DISPLAY_WIDTH * DISPLAY_HEIGHT / 2;
 	while (counter--)
 	{
-		*ptr++ = 0x55; *ptr++ = 0xff; *ptr++ = 0xaa; *ptr++ = 0xff;
+		*ptr++ = 0xAA;
 	}
 }
 
-void Renderer::DrawBar(uint8_t* screenPtr, const uint8_t* iconData, uint8_t amount, uint8_t max)
+void Renderer::DrawBar(int y, const uint8_t* iconData, uint8_t amount, uint8_t max)
 {
 	constexpr uint8_t iconWidth = 8;
+	constexpr uint8_t barHeight = 8;
 	constexpr uint8_t barWidth = 32;
 	constexpr uint8_t unfilledBar = 0xfe;
 	constexpr uint8_t filledBar = 0xc6;
@@ -1258,10 +1403,15 @@ void Renderer::DrawBar(uint8_t* screenPtr, const uint8_t* iconData, uint8_t amou
 
 	while (x < iconWidth)
 	{
-		screenPtr[x] = pgm_read_byte(&iconData[x]);
+	    uint8_t iconSlice = iconData[x];
+		for(int j = 0; j < barHeight; j++)
+		{
+		    uint8_t colour = ((1 << j) & iconSlice) != 0 ? 1 : 0;
+		    Platform::PutPixel(x, y + j, colour);
+		}
 		x++;
 	}
-
+/*
 	while (fillAmount--)
 	{
 		screenPtr[x++] = filledBar;
@@ -1273,11 +1423,12 @@ void Renderer::DrawBar(uint8_t* screenPtr, const uint8_t* iconData, uint8_t amou
 	}
 
 	screenPtr[x++] = unfilledBar;
-	screenPtr[x] = 0;
+	screenPtr[x] = 0;*/
 }
 
 void Renderer::DrawDamageIndicator()
 {
+	/*
 	uint8_t* upper = Platform::GetScreenBuffer();
 	uint8_t* lower = upper + DISPLAY_WIDTH * 7;
 
@@ -1294,17 +1445,15 @@ void Renderer::DrawDamageIndicator()
 		ptr += (DISPLAY_WIDTH - 1);
 		*ptr = 0;
 		ptr++;
-	}
+	}*/
 }
 
 void Renderer::DrawHUD()
 {
 	constexpr uint8_t barWidth = 40;
-	uint8_t* screenBuffer = Platform::GetScreenBuffer();
-	uint8_t* screenPtr = screenBuffer + DISPLAY_WIDTH * 6;
 
-	DrawBar(screenBuffer + DISPLAY_WIDTH * 7, heartSpriteData, Game::player.hp, Game::player.maxHP);
-	DrawBar(screenBuffer + DISPLAY_WIDTH * 6, manaSpriteData, Game::player.mana, Game::player.maxMana);
+	DrawBar(DISPLAY_HEIGHT - 16, heartSpriteData, Game::player.hp, Game::player.maxHP);
+	DrawBar(DISPLAY_HEIGHT - 8, manaSpriteData, Game::player.mana, Game::player.maxMana);
 
 	if(Game::player.damageTime > 0)
 		DrawDamageIndicator();
