@@ -3,6 +3,7 @@
 #include "Platform.h"
 #include "Defines.h"
 #include "Game.h"
+#include "Font.h"
 
 Pokitto::Core pokitto;
 unsigned long lastTimingSample;
@@ -152,6 +153,7 @@ int main()
     using PD=Pokitto::Display;
     PC::begin();
     PD::persistence = true;
+    PD::invisiblecolor = 255;
 
     lastTimingSample = Pokitto::Core::getTime();
 
@@ -161,6 +163,17 @@ int main()
     }
 
     Game::Init();
+
+    uint8_t bright[3] = { 255, 198, 145 };
+    uint8_t dark[3] = { 14, 20, 32 };
+    for(int n = 0; n < 16; n++)
+    {
+        uint8_t intensity = (uint8_t) ((n * 255) / 15);
+        uint8_t r = (intensity * bright[0] + (255 - intensity) * dark[0]) / 256;
+        uint8_t g = (intensity * bright[1] + (255 - intensity) * dark[1]) / 256;
+        uint8_t b = (intensity * bright[2] + (255 - intensity) * dark[2]) / 256;
+        PD::paletteptr[n + 16] = PD::RGBto565(r, g, b);
+    }
 
     
     while( PC::isRunning() )
@@ -177,9 +190,14 @@ int main()
     	{
     		Game::Tick();
     		tickAccum -= frameDuration;
+    		tickAccum = 0;
     	}
 
+        timingSample = Pokitto::Core::getTime();
         Game::Draw();
+        unsigned long actualFrameTime = Pokitto::Core::getTime() - timingSample;
+        int fps = 1000 / actualFrameTime;
+        Font::PrintInt((int16_t) fps, 0, 0);
     }
     
     return 0;

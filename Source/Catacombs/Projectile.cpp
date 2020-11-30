@@ -126,7 +126,7 @@ void ProjectileManager::Update()
 
 			if (hitAnything)
 			{
-				ParticleSystemManager::CreateExplosion(p.x - deltaX, p.y - deltaY);
+				ParticleSystemManager::CreateExplosion(p.x - deltaX, p.y - deltaY, true);
 				p.life = 0;
 			}
 		}

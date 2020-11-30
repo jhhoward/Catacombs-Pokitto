@@ -7,6 +7,8 @@
 #include "Enemy.h"
 
 uint8_t Map::level[Map::width * Map::height / 2];
+uint8_t Map::lightMap[Map::width * Map::height];
+uint8_t Map::staticLightMap[Map::width * Map::height];
 
 bool Map::IsBlocked(uint8_t x, uint8_t y)
 {
@@ -242,7 +244,20 @@ void Map::DrawMinimap()
 			}
 			else
 			{
-				Platform::PutPixel(outX, outY, cellX < width && cellY < height && IsSolid(cellX, cellY) ? COLOUR_BLACK : COLOUR_WHITE);
+			    uint8_t colour = COLOUR_BLACK;
+			    if(cellX < width && cellY < height)
+			    {
+			        if(IsSolid(cellX, cellY))
+			        {
+			            colour = 3;
+			        }
+			        else
+			        {
+			            //colour = 2;
+			            colour = GetLightingAtCell(cellX, cellY) + 16;
+			        }
+			    }
+				Platform::PutPixel(outX, outY, colour);
 			}
 			outY++;
 			cellY++;
@@ -251,4 +266,175 @@ void Map::DrawMinimap()
 		outX++;
 		cellX++;
 	}
+}
+
+void Map::GenerateLightMap()
+{
+    memset(lightMap, 1, width * height);
+    
+    for(int y = 0; y < height; y++)
+    {
+        for(int x = 0; x < width; x++)
+        {
+            if(GetCell(x, y) == CellType::Torch)
+            {
+                AddLight(x, y, 5);
+            }
+            else if(IsSolid(x, y))
+            {
+                lightMap[y * width + x] = 0;
+            }
+        }
+    }
+
+    memcpy(staticLightMap, lightMap, width * height);
+}
+
+void increment(uint8_t& a, uint8_t b, uint8_t max)
+{
+    a += b;
+    if(a > max)
+        a = max;
+}
+
+#include <stdio.h>
+
+void Map::AddDynamicLight(int x, int y, int brightness)
+{
+    if(brightness > 15)
+        brightness = 15;
+    
+    int tileX = x >> 8;
+    int tileY = y >> 8;
+    for(int i = -1; i <= 1; i++)
+    {
+        int tx = tileX + i;
+        int sampleX = tx * CELL_SIZE + (CELL_SIZE / 2);
+        int diffXSqr = (sampleX - x) * (sampleX - x);
+        for(int j = -1; j <= 1; j++)
+        {
+            int ty = tileY + j;
+            
+            if(lightMap[ty * width + tx] != 0)
+            {
+                int sampleY = ty * CELL_SIZE + (CELL_SIZE / 2);
+                int diffYSqr = (sampleY - y) * (sampleY - y);
+                int sqrDist = (diffXSqr + diffYSqr) >> 8;
+                int intensity = 384 / sqrDist;
+                intensity = (brightness * intensity) >> 4;
+                
+                if(lightMap[ty * width + tx] + intensity > 15)
+                {
+                    lightMap[ty * width + tx] = 15;
+                }
+                else
+                {
+                    lightMap[ty * width + tx] += intensity;
+                }
+            }
+        }
+    }
+}
+
+void Map::AddLight(int x, int y, int reach)
+{
+    int16_t lx = x * CELL_SIZE + CELL_SIZE / 2;
+    int16_t ly = y * CELL_SIZE + CELL_SIZE / 2;
+    
+    for(int j = -reach; j <= reach; j++)
+    {
+        for(int i = -reach; i <= reach; i++)
+        {
+            int tx = x + i;
+            int ty = y + j;
+            if(tx >= 0 && ty >= 0 && tx < width && ty < height && !IsSolid(tx, ty))
+            {
+                int16_t kx = tx * CELL_SIZE + CELL_SIZE / 2;
+                int16_t ky = ty * CELL_SIZE + CELL_SIZE / 2;
+                
+                if(IsClearLine(lx, ly, kx, ky))
+                {
+                    int sqrDist = (i * i) + (j * j);
+                    int intensity = sqrDist > 0 ? 14 / sqrDist : 15;
+                    lightMap[ty * width + tx] += intensity;
+                    if(lightMap[ty * width + tx] > 15)
+                    {
+                        lightMap[ty * width + tx] = 15;
+                    }
+                }
+            }
+        }
+    }
+}
+
+uint8_t Map::GetLightingAtCell(int x, int y)
+{
+    return lightMap[y * width + x];
+}
+
+uint8_t Map::SampleWorldLighting(int x, int y)
+{
+    x -= CELL_SIZE / 2;
+    y -= CELL_SIZE / 2;
+    int tx = x / CELL_SIZE;
+    int ty = y / CELL_SIZE;
+    
+    if(tx >= 0 && ty >= 0 && tx < width - 1 && ty < height - 1)
+    {
+        int u = x & 0xff;
+        int v = y & 0xff;
+        uint8_t topLeft = GetLightingAtCell(tx, ty);
+        uint8_t topRight = GetLightingAtCell(tx + 1, ty);
+        uint8_t bottomLeft = GetLightingAtCell(tx, ty + 1);
+        uint8_t bottomRight = GetLightingAtCell(tx + 1, ty + 1);
+        
+        uint8_t top, bottom, mid;
+        
+        if(topLeft == 0)
+        {
+            top = topRight;
+        }
+        else if(topRight == 0)
+        {
+            top = topLeft;
+        }
+        else
+        {
+            top = (topRight * u + topLeft * (255 - u)) >> 8;
+        }
+        
+        if(bottomLeft == 0)
+        {
+            bottom = bottomRight;
+        }
+        else if(bottomRight == 0)
+        {
+            bottom = bottomLeft;
+        }
+        else
+        {
+            bottom = (bottomRight * u + bottomLeft * (255 - u)) >> 8;
+        }
+        
+        if(top == 0)
+        {
+            mid = bottom;
+        }
+        else if(bottom == 0)
+        {
+            mid = top;
+        }
+        else
+        {
+            mid = (bottom * v + top * (255 - v)) >> 8;
+        }
+        
+        return mid;
+    }
+    return 0;
+}
+
+void Map::RevertToStaticLightMap()
+{
+    memcpy(lightMap, staticLightMap, width * height);
 }

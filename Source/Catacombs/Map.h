@@ -53,8 +53,17 @@ public:
 	static void DrawMinimap();
 
 	static bool IsClearLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
+	
+	static void RevertToStaticLightMap();
+	static void GenerateLightMap();
+	static void AddLight(int x, int y, int reach);
+	static void AddDynamicLight(int x, int y, int intensity);
+	static uint8_t GetLightingAtCell(int x, int y);
+	static uint8_t SampleWorldLighting(int x, int y);
 
 private:	
 	static uint8_t level[width * height / 2];
+	static uint8_t lightMap[width * height];
+	static uint8_t staticLightMap[width * height];
 	
 };

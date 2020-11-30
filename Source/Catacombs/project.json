@@ -456,6 +456,15 @@
 		},
 		"\\Catacombs.bin": {
 			"sdcard": false
+		},
+		"\\Strings.cpp": {
+			"sdcard": false
+		},
+		"\\Strings.h": {
+			"sdcard": false
+		},
+		"\\Generated\\FloorLUT.inc.h": {
+			"sdcard": false
 		}
 	},
 	"ideVersion": 10000,

@@ -607,4 +607,6 @@ void MapGenerator::Generate()
 			attempts--;
 		}
 	}
+	
+	Map::GenerateLightMap();
 }

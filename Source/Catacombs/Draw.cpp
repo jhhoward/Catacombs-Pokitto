@@ -63,6 +63,31 @@ const uint16_t scaleDrawReadMasks[] PROGMEM =
 	(1 << 15)
 };
 
+const int bands[] = 
+{
+    DISPLAY_HEIGHT / 4,  
+    DISPLAY_HEIGHT / 5,  
+    DISPLAY_HEIGHT / 6,  
+    DISPLAY_HEIGHT / 7,  
+    DISPLAY_HEIGHT / 8,  
+    DISPLAY_HEIGHT / 9,  
+    DISPLAY_HEIGHT / 10,  
+    DISPLAY_HEIGHT / 11,  
+};
+
+uint8_t CalculateDistanceLighting(int w)
+{
+    for(int n = 0; n < 8; n++)
+    {
+        if(w > bands[n])
+        {
+            return 8 - n;
+        }
+    }
+
+    return 0;    
+}
+
 #if WITH_VECTOR_TEXTURES
 void Renderer::DrawWallLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint8_t clipLeft, uint8_t clipRight, uint8_t col)
 {
@@ -146,7 +171,7 @@ void Renderer::DrawWallLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint
 #if WITH_IMAGE_TEXTURES
 void Renderer::DrawWallSegment(const uint16_t* texture, int16_t x1, int16_t w1, int16_t x2, int16_t w2, uint8_t u1clip, uint8_t u2clip, bool edgeLeft, bool edgeRight, bool shadeEdge)
 #elif WITH_VECTOR_TEXTURES
-void Renderer::DrawWallSegment(const uint8_t* texture, int16_t x1, int16_t w1, int16_t x2, int16_t w2, uint8_t u1clip, uint8_t u2clip, bool edgeLeft, bool edgeRight, bool shadeEdge)
+void Renderer::DrawWallSegment(const uint8_t* texture, int16_t x1, int16_t w1, int16_t x2, int16_t w2, uint8_t u1clip, uint8_t u2clip, bool edgeLeft, bool edgeRight, uint8_t lighting1, uint8_t lighting2)
 #else
 void Renderer::DrawWallSegment(int16_t x1, int16_t w1, int16_t x2, int16_t w2, bool edgeLeft, bool edgeRight, bool shadeEdge)
 #endif
@@ -192,13 +217,13 @@ void Renderer::DrawWallSegment(int16_t x1, int16_t w1, int16_t x2, int16_t w2, b
 	for (int x = x1; x < DISPLAY_WIDTH; x++)
 	{
 		bool drawSlice = x >= 0 && wBuffer[x] < w;
-		bool shadeSlice = shadeEdge;// && (x & 1) == 0;		
+		//bool shadeSlice = shadeEdge;// && (x & 1) == 0;		
 		
 		int8_t horizon = horizonBuffer[x];
 
 		if (drawSlice)
 		{
-			uint8_t sliceMask = 0xff;
+			/*uint8_t sliceMask = 26; //0xff;
 
 			if ((edgeLeft && x == x1) || (edgeRight && x == x2))
 			{
@@ -206,7 +231,20 @@ void Renderer::DrawWallSegment(int16_t x1, int16_t w1, int16_t x2, int16_t w2, b
 			}
 			else if (shadeSlice)
 			{
-				sliceMask = 0x55;
+				sliceMask = 24; // 0x55;
+			}*/
+			int alpha = 256 * (x - x1) / (x2 - x1);
+			int u = (alpha * u2clip + (256 - alpha) * u1clip) / 256;
+			uint8_t lighting = (u * lighting2 + (128 - u) * lighting1) / 128;
+			
+			uint8_t sliceLighting = lighting;// + CalculateDistanceLighting(w);
+			if(sliceLighting > 15)
+			    sliceLighting = 15;
+			uint8_t sliceColour = sliceLighting + 16;
+			if ((edgeLeft && x == x1) || (edgeRight && x == x2))
+			{
+			    // disable outlines
+			//	sliceColour = 0;
 			}
 
 #if WITH_IMAGE_TEXTURES
@@ -234,9 +272,11 @@ void Renderer::DrawWallSegment(int16_t x1, int16_t w1, int16_t x2, int16_t w2, b
 			}
 #else
 			int8_t extent = w > 64 ? 64 : w;
-			Platform::DrawVLine(x, horizon - extent, horizon + extent, sliceMask);
-			Platform::PutPixel(x, horizon + extent, edgeColour);
-			Platform::PutPixel(x, horizon - extent, edgeColour);
+			Platform::DrawVLine(x, horizon - extent, horizon + extent, sliceColour);
+			
+			// disable outlines
+			//Platform::PutPixel(x, horizon + extent, edgeColour);
+			//Platform::PutPixel(x, horizon - extent, edgeColour);
 #endif
 			
 			if(wBuffer[x] == 0)
@@ -292,6 +332,9 @@ void Renderer::DrawWallSegment(int16_t x1, int16_t w1, int16_t x2, int16_t w2, b
 	
 	if(segmentClipLeft == segmentClipRight)
 		return;
+		
+	// Disable outlines
+	return;
 
 #if WITH_VECTOR_TEXTURES
 	if (w1 < MIN_TEXTURE_DISTANCE || w2 < MIN_TEXTURE_DISTANCE || !texture)
@@ -380,7 +423,7 @@ void Renderer::TransformToScreenSpace(int16_t viewX, int16_t viewZ, int16_t& out
 #if WITH_IMAGE_TEXTURES
 void Renderer::DrawWall(const uint16_t* texture, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool edgeLeft, bool edgeRight, bool shadeEdge)
 #elif WITH_VECTOR_TEXTURES
-void Renderer::DrawWall(const uint8_t* texture, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool edgeLeft, bool edgeRight, bool shadeEdge)
+void Renderer::DrawWall(const uint8_t* texture, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool edgeLeft, bool edgeRight, uint8_t lighting1, uint8_t lighting2)
 #else
 void Renderer::DrawWall(int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool edgeLeft, bool edgeRight, bool shadeEdge)
 #endif
@@ -392,6 +435,9 @@ void Renderer::DrawWall(int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool edg
 	uint8_t u1 = 0, u2 = 16;
 #endif
 
+    lighting1 = Map::SampleWorldLighting(x1, y1);
+    lighting2 = Map::SampleWorldLighting(x2, y2);
+    
 	TransformToViewSpace(x1, y1, viewX1, viewZ1);
 	TransformToViewSpace(x2, y2, viewX2, viewZ2);
 
@@ -439,7 +485,7 @@ void Renderer::DrawWall(int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool edg
 	int16_t w2 = (int16_t)((CELL_SIZE / 2 * NEAR_PLANE * CAMERA_SCALE) / viewZ2);
 
 #if WITH_TEXTURES
-	DrawWallSegment(texture, sx1, w1, sx2, w2, u1, u2, edgeLeft, edgeRight, shadeEdge);
+	DrawWallSegment(texture, sx1, w1, sx2, w2, u1, u2, edgeLeft, edgeRight, lighting1, lighting2);
 #else
 	DrawWallSegment(sx1, w1, sx2, w2, edgeLeft, edgeRight, shadeEdge);
 #endif
@@ -675,10 +721,12 @@ void Renderer::DrawCell(uint8_t x, uint8_t y)
 	const uint8_t* texture = vectorTexture0; // (const uint8_t*) pgm_read_ptr(&textures[(uint8_t)cellType - (uint8_t)CellType::FirstSolidCell]);
 #endif
 
+
 	if (!blockedLeft && camera.x < x1)
 	{
 #if WITH_TEXTURES
-		DrawWall(texture, x1, y1, x1, y2, !blockedUp && camera.y > y1, !blockedDown && camera.y < y2, true);
+        uint8_t lighting = Map::GetLightingAtCell(x - 1, y);
+		DrawWall(texture, x1, y1, x1, y2, !blockedUp && camera.y > y1, !blockedDown && camera.y < y2, lighting, lighting);
 #else
 		DrawWall(x1, y1, x1, y2, !blockedUp && camera.y > y1, !blockedDown && camera.y < y2, true);
 #endif
@@ -687,7 +735,8 @@ void Renderer::DrawCell(uint8_t x, uint8_t y)
 	if (!blockedDown && camera.y > y2)
 	{
 #if WITH_TEXTURES
-		DrawWall(texture, x1, y2, x2, y2, !blockedLeft && camera.x > x1, !blockedRight && camera.x < x2, false);
+        uint8_t lighting = Map::GetLightingAtCell(x, y + 1);
+		DrawWall(texture, x1, y2, x2, y2, !blockedLeft && camera.x > x1, !blockedRight && camera.x < x2, lighting, lighting);
 #else
 		DrawWall(x1, y2, x2, y2, !blockedLeft && camera.x > x1, !blockedRight && camera.x < x2, false);
 #endif
@@ -696,7 +745,8 @@ void Renderer::DrawCell(uint8_t x, uint8_t y)
 	if (!blockedRight && camera.x > x2)
 	{
 #if WITH_TEXTURES
-		DrawWall(texture, x2, y2, x2, y1, !blockedDown && camera.y < y2, !blockedUp && camera.y > y1, true);
+        uint8_t lighting = Map::GetLightingAtCell(x + 1, y);
+		DrawWall(texture, x2, y2, x2, y1, !blockedDown && camera.y < y2, !blockedUp && camera.y > y1, lighting, lighting);
 #else
 		DrawWall(x2, y2, x2, y1, !blockedDown && camera.y < y2, !blockedUp && camera.y > y1, true);
 #endif
@@ -705,7 +755,8 @@ void Renderer::DrawCell(uint8_t x, uint8_t y)
 	if (!blockedUp && camera.y < y1)
 	{
 #if WITH_TEXTURES
-		DrawWall(texture, x2, y1, x1, y1, !blockedRight && camera.x < x2, !blockedLeft && camera.x > x1, false);
+        uint8_t lighting = Map::GetLightingAtCell(x, y - 1);
+		DrawWall(texture, x2, y1, x1, y1, !blockedRight && camera.x < x2, !blockedLeft && camera.x > x1, lighting, lighting);
 #else
 		DrawWall(x2, y1, x1, y1, !blockedRight && camera.x < x2, !blockedLeft && camera.x > x1, false);
 #endif
@@ -1373,21 +1424,142 @@ void Renderer::DrawWeapon()
 	
 }
 
+const int16_t floorLUT[] =
+{
+#include "Generated/FloorLUT.inc.h"  
+};
+
+
 void Renderer::DrawBackground()
 {
+	int16_t rotCos = FixedCos(camera.angle);
+	int16_t rotSin = FixedSin(camera.angle);
+
+    int index = 0;
+
+    for(int x = 0; x < DISPLAY_WIDTH; x++)
+    {
+	    uint8_t* screenPtr = Platform::GetScreenBuffer() + x;
+	    
+	    for(int w = 0; w < DISPLAY_HEIGHT / 2; w++)
+        //for(int y = 0; y < DISPLAY_HEIGHT; y++)
+        {
+            int viewX = floorLUT[index++];
+            int viewZ = floorLUT[index++];
+            
+            /*int wDepth = w;
+    	    //int wDepth = horizonBuffer[x] - y; //(DISPLAY_HEIGHT / 2) - y;
+    	    //if(wDepth < 0)
+    	     //   wDepth = -wDepth;
+    	    
+    	    int viewZ = (CELL_SIZE / 2 * NEAR_PLANE * CAMERA_SCALE) / wDepth;
+
+            int vx = x - (DISPLAY_WIDTH / 2);
+            int viewX = (vx * viewZ) / (NEAR_PLANE * CAMERA_SCALE);
+            */
+            int worldX = camera.x + ((rotCos * viewZ) >> FIXED_SHIFT) - ((rotSin * viewX) >> FIXED_SHIFT);
+            int worldY = camera.y + ((rotSin * viewZ) >> FIXED_SHIFT) + ((rotCos * viewX) >> FIXED_SHIFT);
+            
+            const bool dither = true;
+            
+            const int quarter = 8;
+            const int shift = 0;
+            int tx = (worldX & 0xff) >> 6;
+            int ty = (worldY & 0xff) >> 6;
+            
+            if(dither)
+            {
+                worldX += shift;
+                worldY += shift;
+            if(x & 1)
+            {
+                if(w & 1)
+                {
+                    worldY += quarter;
+                }
+                else
+                {
+                    worldX += quarter * 2;
+                    worldY += quarter * 3;
+                }
+            }
+            else
+            {
+                if(w & 1)
+                {
+                    worldX += quarter * 3;
+                    worldY += quarter * 2;
+                }
+                else
+                {
+                    worldX += quarter;
+                }
+            }
+            }
+            
+            uint8_t lighting = Map::SampleWorldLighting(worldX, worldY);
+            
+            if((tx & 1) ^ (ty & 1))
+            {
+//                lighting /= 2;
+            } //else lighting = 10;
+            
+            uint8_t outColour = lighting + 16;
+            
+            int y1 = horizonBuffer[x] - w;
+            int y2 = horizonBuffer[x] + w;
+            
+            if(y1 >= 0)
+                screenPtr[y1 * DISPLAY_WIDTH] = outColour;
+            if(y2 < DISPLAY_HEIGHT)
+                screenPtr[y2 * DISPLAY_WIDTH] = outColour;
+            //Platform::PutPixel(x, y, lighting + 16);
+/*	// apply perspective projection
+	int16_t vx1 = (int16_t)((int32_t)viewX1 * NEAR_PLANE * CAMERA_SCALE / viewZ1);
+	int16_t vx2 = (int16_t)((int32_t)viewX2 * NEAR_PLANE * CAMERA_SCALE / viewZ2);
+
+	// transform the end points into screen space
+	int16_t sx1 = (int16_t)((DISPLAY_WIDTH / 2) + vx1);
+	int16_t sx2 = (int16_t)((DISPLAY_WIDTH / 2) + vx2) - 1;
+
+	//if (sx2 <= 0 || sx1 >= DISPLAY_WIDTH)
+	//	return;
+
+	int16_t w1 = (int16_t)((CELL_SIZE / 2 * NEAR_PLANE * CAMERA_SCALE) / viewZ1);
+	int16_t w2 = (int16_t)((CELL_SIZE / 2 * NEAR_PLANE * CAMERA_SCALE) / viewZ2);
+  */          
+        }
+    }
+    
+    /*
 	uint8_t* ptr = Platform::GetScreenBuffer();
+	
+	for(int y = 0; y < DISPLAY_HEIGHT; y++)
+	{
+	    int wDepth = (DISPLAY_HEIGHT / 2) - y;
+	    if(wDepth < 0)
+	        wDepth = -wDepth;
+	    
+	    uint8_t colour = 16 + CalculateDistanceLighting(wDepth);
+	    
+	    memset(ptr, colour, DISPLAY_WIDTH);
+	    ptr += DISPLAY_WIDTH;
+	}*/
+	
+	/*
 	int counter = DISPLAY_WIDTH * DISPLAY_HEIGHT / 2;
 
 	while (counter--)
 	{
-		*ptr++ = 0x55;
+		*ptr++ = 28; //0x55;
 	}
 
 	counter = DISPLAY_WIDTH * DISPLAY_HEIGHT / 2;
 	while (counter--)
 	{
-		*ptr++ = 0xAA;
+		*ptr++ = 22; //0xAA;
 	}
+	*/
 }
 
 void Renderer::DrawBar(int y, const uint8_t* iconData, uint8_t amount, uint8_t max)
@@ -1466,8 +1638,6 @@ void Renderer::Render()
 {
 	globalRenderFrame++;
 
-	DrawBackground();
-
 	numBufferSlicesFilled = 0;
 	numQueuedDrawables = 0;
 	
@@ -1476,6 +1646,24 @@ void Renderer::Render()
 		wBuffer[n] = 0;
 		horizonBuffer[n] = HORIZON + (((DISPLAY_WIDTH / 2 - n) * camera.tilt) >> 8) + camera.bob;
 	}
+
+    Map::RevertToStaticLightMap();
+    for(Projectile& proj : ProjectileManager::projectiles)
+    {
+        if(proj.life > 0)
+        {
+            Map::AddDynamicLight(proj.x, proj.y, 15);
+        }
+    }
+    for(ParticleSystem& p : ParticleSystemManager::systems)
+    {
+        if(p.IsActive())
+        {
+            Map::AddDynamicLight(p.worldX, p.worldY, p.life);
+        }
+    }
+
+	DrawBackground();
 
 	camera.cellX = camera.x / CELL_SIZE;
 	camera.cellY = camera.y / CELL_SIZE;
@@ -1498,6 +1686,6 @@ void Renderer::Render()
 
 	DrawHUD();
 
-	//Map::DrawMinimap();
+	Map::DrawMinimap();
 }
 
