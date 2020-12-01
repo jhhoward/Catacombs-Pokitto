@@ -23,6 +23,8 @@
 #define DrawScaledInner DrawScaledNoOutline
 #endif
 
+#include "Generated/Textures.inc.h"
+
 Camera Renderer::camera;
 uint8_t Renderer::wBuffer[DISPLAY_WIDTH];
 int8_t Renderer::horizonBuffer[DISPLAY_WIDTH];
@@ -169,7 +171,7 @@ void Renderer::DrawWallLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint
 #endif
 
 #if WITH_IMAGE_TEXTURES
-void Renderer::DrawWallSegment(const uint16_t* texture, int16_t x1, int16_t w1, int16_t x2, int16_t w2, uint8_t u1clip, uint8_t u2clip, bool edgeLeft, bool edgeRight, bool shadeEdge)
+void Renderer::DrawWallSegment(const uint8_t* texture, int16_t x1, int16_t w1, int16_t x2, int16_t w2, uint8_t u1clip, uint8_t u2clip, uint8_t lighting1, uint8_t lighting2)
 #elif WITH_VECTOR_TEXTURES
 void Renderer::DrawWallSegment(const uint8_t* texture, int16_t x1, int16_t w1, int16_t x2, int16_t w2, uint8_t u1clip, uint8_t u2clip, bool edgeLeft, bool edgeRight, uint8_t lighting1, uint8_t lighting2)
 #else
@@ -183,7 +185,9 @@ void Renderer::DrawWallSegment(int16_t x1, int16_t w1, int16_t x2, int16_t w2, b
 #endif
 		w1 += ((int32_t)(0 - x1) * (int32_t)(w2 - w1)) / (x2 - x1);
 		x1 = 0;
+#if !WITH_IMAGE_TEXTURES
 		edgeLeft = false;
+#endif
 	}
 
 	int16_t dx = x2 - x1;
@@ -191,11 +195,6 @@ void Renderer::DrawWallSegment(int16_t x1, int16_t w1, int16_t x2, int16_t w2, b
 	int16_t w = w1;
 	int16_t dw;
 	int8_t wstep;
-#if WITH_IMAGE_TEXTURES
-	uint8_t du = u2clip - u1clip;
-	int16_t uerror = werror;
-	uint8_t u = u1clip;
-#endif
 
 	if (w1 < w2)
 	{
@@ -233,41 +232,73 @@ void Renderer::DrawWallSegment(int16_t x1, int16_t w1, int16_t x2, int16_t w2, b
 			{
 				sliceMask = 24; // 0x55;
 			}*/
+			
+			/*
 			int alpha = 256 * (x - x1) / (x2 - x1);
 			int u = (alpha * u2clip + (256 - alpha) * u1clip) / 256;
-			uint8_t lighting = (u * lighting2 + (128 - u) * lighting1) / 128;
+			uint8_t sliceLighting = (u * lighting2 + (16 - u) * lighting1) / 16;
 			
-			uint8_t sliceLighting = lighting;// + CalculateDistanceLighting(w);
-			if(sliceLighting > 15)
-			    sliceLighting = 15;
-			uint8_t sliceColour = sliceLighting + 16;
+			int alpha2 = 256 * (x + 1 - x1) / (x2 - x1);
+			int u2 = (alpha2 * u2clip + (256 - alpha2) * u1clip) / 256;
+			uint8_t sliceLighting2 = (u2 * lighting2 + (16 - u2) * lighting1) / 16;
+			*/
+			
+			int alpha = 256 * (x - x1) / (x2 - x1);
+			int u = (alpha * u2clip + (256 - alpha) * u1clip) / 256;
+
+			int dither1 = (x & 1) ? -1 : 2;
+			int dither2 = (x & 1) ? 1 : 0;
+			
+			int alpha1 = 256 * (x + dither1 - x1) / (x2 - x1);
+			int u1 = (alpha1 * u2clip + (256 - alpha1) * u1clip) / 256;
+			u1 = u + dither1;
+			uint8_t sliceLighting1 = (u1 * lighting2 + (16 - u1) * lighting1) / 16;
+			
+			int alpha2 = 256 * (x + dither2 - x1) / (x2 - x1);
+			int u2 = (alpha2 * u2clip + (256 - alpha2) * u1clip) / 256;
+			u2 = u + dither2;
+			uint8_t sliceLighting2 = (u2 * lighting2 + (16 - u2) * lighting1) / 16;
+			
+			//u1 = u + dither1;
+			//u2 = u + dither2;
+			
+			//uint8_t sliceLighting = lighting;// + CalculateDistanceLighting(w);
+			//if(sliceLighting > 15)
+			 //   sliceLighting = 15;
+
+			/*
 			if ((edgeLeft && x == x1) || (edgeRight && x == x2))
 			{
 			    // disable outlines
 			//	sliceColour = 0;
-			}
+			}*/
 
 #if WITH_IMAGE_TEXTURES
 			{
 				uint8_t y1 = w > horizon ? 0 : horizon - w;
-				uint8_t y2 = horizon + w > DISPLAY_HEIGHT ? DISPLAY_HEIGHT : horizon + w;
+				uint8_t y2 = horizon + w >= DISPLAY_HEIGHT ? DISPLAY_HEIGHT - 1 : horizon + w;
 
-				DrawVLine(x, y1, y2, sliceMask);
-				uint16_t textureData = pgm_read_word(&texture[u % 16]);
-				const uint16_t wallSize = w * 2;
-				uint16_t wallPos = y1 - (horizon - w);
-				
-				for (uint8_t y = y1; y < y2; y++)
+				//DrawVLine(x, y1, y2, sliceMask);
+				u = u & 0xf;
+				const uint8_t* texturePtr = texture + u;
+				int wallPos = y1 - (horizon - w);
+				int wallSize = w * 2;
+				uint8_t* screenPtr = Platform::GetScreenBuffer();
+				screenPtr += x + (y1 * DISPLAY_WIDTH);
+				for(int y = y1; y <= y2; y++)
 				{
-					uint8_t v = (16 * wallPos) / wallSize;
-					uint16_t mask = pgm_read_word(&scaleDrawReadMasks[v]);
-
-					if ((textureData & mask) == 0)
-					{
-						Platform::PutPixel(x, y, 0);
-					}
-
-					wallPos++;
+				    int v = (16 * wallPos) / wallSize;
+				    uint8_t outColour = texturePtr[v * 16];
+				    
+				    if(y & 1)
+				        outColour |= sliceLighting1;
+				    else
+				        outColour |= sliceLighting2;
+				        
+				    *screenPtr = outColour;
+				    //Platform::PutPixel(x, y, outColour);
+				    wallPos++;
+				    screenPtr += DISPLAY_WIDTH;
 				}
 			}
 #else
@@ -318,16 +349,6 @@ void Renderer::DrawWallSegment(int16_t x1, int16_t w1, int16_t x2, int16_t w2, b
 				Platform::PutPixel(x, horizon - w, edgeColour);
 			}
 		}
-		
-		#if WITH_IMAGE_TEXTURES
-		uerror -= du;
-		
-		while(uerror < 0)
-		{
-			u++;
-			uerror += dx;
-		}
-		#endif
 	}
 	
 	if(segmentClipLeft == segmentClipRight)
@@ -421,7 +442,7 @@ void Renderer::TransformToScreenSpace(int16_t viewX, int16_t viewZ, int16_t& out
 }
 
 #if WITH_IMAGE_TEXTURES
-void Renderer::DrawWall(const uint16_t* texture, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool edgeLeft, bool edgeRight, bool shadeEdge)
+void Renderer::DrawWall(const uint8_t* texture, int16_t x1, int16_t y1, int16_t x2, int16_t y2)
 #elif WITH_VECTOR_TEXTURES
 void Renderer::DrawWall(const uint8_t* texture, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool edgeLeft, bool edgeRight, uint8_t lighting1, uint8_t lighting2)
 #else
@@ -435,8 +456,8 @@ void Renderer::DrawWall(int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool edg
 	uint8_t u1 = 0, u2 = 16;
 #endif
 
-    lighting1 = Map::SampleWorldLighting(x1, y1);
-    lighting2 = Map::SampleWorldLighting(x2, y2);
+    uint8_t lighting1 = Map::SampleWorldLighting(x1, y1);
+    uint8_t lighting2 = Map::SampleWorldLighting(x2, y2);
     
 	TransformToViewSpace(x1, y1, viewX1, viewZ1);
 	TransformToViewSpace(x2, y2, viewX2, viewZ2);
@@ -458,7 +479,7 @@ void Renderer::DrawWall(int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool edg
 #endif
 		viewX1 += (CLIP_PLANE - viewZ1) * (viewX2 - viewX1) / (viewZ2 - viewZ1);
 		viewZ1 = CLIP_PLANE;
-		edgeLeft = false;
+		//edgeLeft = false;
 	}
 	else if (viewZ2 < CLIP_PLANE)
 	{
@@ -467,7 +488,7 @@ void Renderer::DrawWall(int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool edg
 #endif
 		viewX2 += (CLIP_PLANE - viewZ2) * (viewX1 - viewX2) / (viewZ1 - viewZ2);
 		viewZ2 = CLIP_PLANE;
-		edgeRight = false;
+		//edgeRight = false;
 	}
 
 	// apply perspective projection
@@ -484,7 +505,9 @@ void Renderer::DrawWall(int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool edg
 	int16_t w1 = (int16_t)((CELL_SIZE / 2 * NEAR_PLANE * CAMERA_SCALE) / viewZ1);
 	int16_t w2 = (int16_t)((CELL_SIZE / 2 * NEAR_PLANE * CAMERA_SCALE) / viewZ2);
 
-#if WITH_TEXTURES
+#if WITH_IMAGE_TEXTURES
+    DrawWallSegment(texture, sx1, w1, sx2, w2, u1, u2, lighting1, lighting2);
+#elif WITH_TEXTURES
 	DrawWallSegment(texture, sx1, w1, sx2, w2, u1, u2, edgeLeft, edgeRight, lighting1, lighting2);
 #else
 	DrawWallSegment(sx1, w1, sx2, w2, edgeLeft, edgeRight, shadeEdge);
@@ -716,7 +739,7 @@ void Renderer::DrawCell(uint8_t x, uint8_t y)
 	bool blockedDown = Map::IsSolid(x, y + 1);
 
 #if WITH_IMAGE_TEXTURES
-	const uint16_t* texture = wallTextureData + (16 * (cellType - 1));
+	const uint8_t* texture = ColourTextures;
 #elif WITH_VECTOR_TEXTURES
 	const uint8_t* texture = vectorTexture0; // (const uint8_t*) pgm_read_ptr(&textures[(uint8_t)cellType - (uint8_t)CellType::FirstSolidCell]);
 #endif
@@ -725,8 +748,7 @@ void Renderer::DrawCell(uint8_t x, uint8_t y)
 	if (!blockedLeft && camera.x < x1)
 	{
 #if WITH_TEXTURES
-        uint8_t lighting = Map::GetLightingAtCell(x - 1, y);
-		DrawWall(texture, x1, y1, x1, y2, !blockedUp && camera.y > y1, !blockedDown && camera.y < y2, lighting, lighting);
+		DrawWall(texture, x1, y1, x1, y2);
 #else
 		DrawWall(x1, y1, x1, y2, !blockedUp && camera.y > y1, !blockedDown && camera.y < y2, true);
 #endif
@@ -735,8 +757,7 @@ void Renderer::DrawCell(uint8_t x, uint8_t y)
 	if (!blockedDown && camera.y > y2)
 	{
 #if WITH_TEXTURES
-        uint8_t lighting = Map::GetLightingAtCell(x, y + 1);
-		DrawWall(texture, x1, y2, x2, y2, !blockedLeft && camera.x > x1, !blockedRight && camera.x < x2, lighting, lighting);
+		DrawWall(texture, x1, y2, x2, y2);
 #else
 		DrawWall(x1, y2, x2, y2, !blockedLeft && camera.x > x1, !blockedRight && camera.x < x2, false);
 #endif
@@ -745,8 +766,7 @@ void Renderer::DrawCell(uint8_t x, uint8_t y)
 	if (!blockedRight && camera.x > x2)
 	{
 #if WITH_TEXTURES
-        uint8_t lighting = Map::GetLightingAtCell(x + 1, y);
-		DrawWall(texture, x2, y2, x2, y1, !blockedDown && camera.y < y2, !blockedUp && camera.y > y1, lighting, lighting);
+		DrawWall(texture, x2, y2, x2, y1);
 #else
 		DrawWall(x2, y2, x2, y1, !blockedDown && camera.y < y2, !blockedUp && camera.y > y1, true);
 #endif
@@ -755,8 +775,7 @@ void Renderer::DrawCell(uint8_t x, uint8_t y)
 	if (!blockedUp && camera.y < y1)
 	{
 #if WITH_TEXTURES
-        uint8_t lighting = Map::GetLightingAtCell(x, y - 1);
-		DrawWall(texture, x2, y1, x1, y1, !blockedRight && camera.x < x2, !blockedLeft && camera.x > x1, lighting, lighting);
+		DrawWall(texture, x2, y1, x1, y1);
 #else
 		DrawWall(x2, y1, x1, y1, !blockedRight && camera.x < x2, !blockedLeft && camera.x > x1, false);
 #endif
@@ -942,7 +961,7 @@ void DrawScaledOutline(const uint16_t* data, int x, int y, uint8_t halfSize, uin
 				{
 					if(middleIsWhite)
 					{
-						*screenBuffer = COLOUR_WHITE;
+						*screenBuffer = colour;
 						//localBuffer |= writeMask;
 					}
 					else
@@ -1215,11 +1234,11 @@ inline void DrawScaledNoOutline(const uint16_t* data, int8_t x, int8_t y, uint8_
 	}
 }
 
-void Renderer::DrawScaled(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, bool invert)
+void Renderer::DrawScaled(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, uint8_t colour)
 {
 	if (halfSize > 2)
 	{
-		DrawScaledOutline(data, x, y, halfSize, inverseCameraDistance, invert ? 1 : 0);
+		DrawScaledOutline(data, x, y, halfSize, inverseCameraDistance, colour);
 	}
 	else if (halfSize == 2)
 	{
@@ -1307,7 +1326,7 @@ QueuedDrawable* Renderer::CreateQueuedDrawable(uint8_t inverseCameraDistance)
 	return &queuedDrawables[insertionPoint];
 }
 
-void Renderer::QueueSprite(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, bool invert)
+void Renderer::QueueSprite(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, uint8_t colour)
 {
 	if(x < -halfSize * 2)
 		return;
@@ -1326,7 +1345,7 @@ void Renderer::QueueSprite(const uint16_t* data, int8_t x, int8_t y, uint8_t hal
 		drawable->y = y;
 		drawable->halfSize = halfSize;
 		drawable->inverseCameraDistance = inverseCameraDistance;
-		drawable->invert = invert;
+		drawable->colour = colour;
 	}
 }
 
@@ -1338,7 +1357,7 @@ void Renderer::RenderQueuedDrawables()
 		
 		if(drawable.type == DrawableType::Sprite)
 		{
-			DrawScaled(drawable.spriteData, drawable.x, drawable.y, drawable.halfSize, drawable.inverseCameraDistance, drawable.invert);
+			DrawScaled(drawable.spriteData, drawable.x, drawable.y, drawable.halfSize, drawable.inverseCameraDistance, drawable.colour);
 		}
 		else
 		{
@@ -1375,7 +1394,7 @@ bool Renderer::TransformAndCull(int16_t worldX, int16_t worldY, int16_t& outScre
 	return true;
 }
 
-void Renderer::DrawObject(const uint16_t* spriteData, int16_t x, int16_t y, uint8_t scale, AnchorType anchor, bool invert)
+void Renderer::DrawObject(const uint16_t* spriteData, int16_t x, int16_t y, uint8_t scale, AnchorType anchor, uint8_t colour)
 {
 	int16_t screenX, screenW;
 
@@ -1401,7 +1420,9 @@ void Renderer::DrawObject(const uint16_t* spriteData, int16_t x, int16_t y, uint
 			break;
 		}
 		
-		QueueSprite(spriteData, screenX - spriteSize, outY, (uint8_t)spriteSize, inverseCameraDistance, invert);
+		uint8_t lighting = Map::SampleWorldLighting(x, y);
+		
+		QueueSprite(spriteData, screenX - spriteSize, outY, (uint8_t)spriteSize, inverseCameraDistance, lighting | 0xf0);
 	}
 }
 
@@ -1432,7 +1453,9 @@ const int16_t floorLUT[] =
 
 void Renderer::DrawBackground()
 {
-	int16_t rotCos = FixedCos(camera.angle);
+    const uint8_t* floorTexture = ColourTextures + (256 * 1);
+    const uint8_t* ceilingTexture = ColourTextures + (256 * 2);
+	int16_t rotCos = FixedCos(camera.angle); 
 	int16_t rotSin = FixedSin(camera.angle);
 
     int index = 0;
@@ -1441,9 +1464,10 @@ void Renderer::DrawBackground()
     {
 	    uint8_t* screenPtr = Platform::GetScreenBuffer() + x;
 	    
-	    for(int w = 0; w < DISPLAY_HEIGHT / 2; w++)
+	    for(int w = wBuffer[x] + 1; w < DISPLAY_HEIGHT / 2; w++)
         //for(int y = 0; y < DISPLAY_HEIGHT; y++)
         {
+            index = ((DISPLAY_HEIGHT / 2) * x + w) * 2;
             int viewX = floorLUT[index++];
             int viewZ = floorLUT[index++];
             
@@ -1464,55 +1488,49 @@ void Renderer::DrawBackground()
             
             const int quarter = 8;
             const int shift = 0;
-            int tx = (worldX & 0xff) >> 6;
-            int ty = (worldY & 0xff) >> 6;
+            int tx = (worldX >> 4) & 0xf;
+            int ty = (worldY >> 4) & 0xf;
             
             if(dither)
             {
                 worldX += shift;
                 worldY += shift;
-            if(x & 1)
-            {
-                if(w & 1)
+                if(x & 1)
                 {
-                    worldY += quarter;
+                    if(w & 1)
+                    {
+                        worldY += quarter;
+                    }
+                    else
+                    {
+                        worldX += quarter * 2;
+                        worldY += quarter * 3;
+                    }
                 }
                 else
                 {
-                    worldX += quarter * 2;
-                    worldY += quarter * 3;
+                    if(w & 1)
+                    {
+                        worldX += quarter * 3;
+                        worldY += quarter * 2;
+                    }
+                    else
+                    {
+                        worldX += quarter;
+                    }
                 }
             }
-            else
-            {
-                if(w & 1)
-                {
-                    worldX += quarter * 3;
-                    worldY += quarter * 2;
-                }
-                else
-                {
-                    worldX += quarter;
-                }
-            }
-            }
-            
+
+
             uint8_t lighting = Map::SampleWorldLighting(worldX, worldY);
-            
-            if((tx & 1) ^ (ty & 1))
-            {
-//                lighting /= 2;
-            } //else lighting = 10;
-            
-            uint8_t outColour = lighting + 16;
-            
+
             int y1 = horizonBuffer[x] - w;
             int y2 = horizonBuffer[x] + w;
-            
+
             if(y1 >= 0)
-                screenPtr[y1 * DISPLAY_WIDTH] = outColour;
+                screenPtr[y1 * DISPLAY_WIDTH] = ceilingTexture[ty * 16 + tx] | lighting;
             if(y2 < DISPLAY_HEIGHT)
-                screenPtr[y2 * DISPLAY_WIDTH] = outColour;
+                screenPtr[y2 * DISPLAY_WIDTH] = floorTexture[ ty * 16 + tx] | lighting;
             //Platform::PutPixel(x, y, lighting + 16);
 /*	// apply perspective projection
 	int16_t vx1 = (int16_t)((int32_t)viewX1 * NEAR_PLANE * CAMERA_SCALE / viewZ1);
@@ -1663,7 +1681,6 @@ void Renderer::Render()
         }
     }
 
-	DrawBackground();
 
 	camera.cellX = camera.x / CELL_SIZE;
 	camera.cellY = camera.y / CELL_SIZE;
@@ -1675,6 +1692,7 @@ void Renderer::Render()
 
 	DrawCells();
 	//DrawFloorLines();
+	DrawBackground();
 
 	EnemyManager::Draw();
 	ProjectileManager::Draw();
@@ -1686,6 +1704,6 @@ void Renderer::Render()
 
 	DrawHUD();
 
-	Map::DrawMinimap();
+	//Map::DrawMinimap();
 }
 

@@ -1,8 +1,8 @@
 #pragma once
 #include "Defines.h"
 
-#define WITH_IMAGE_TEXTURES 0
-#define WITH_VECTOR_TEXTURES 1
+#define WITH_IMAGE_TEXTURES 1
+#define WITH_VECTOR_TEXTURES 0
 #define WITH_TEXTURES (WITH_IMAGE_TEXTURES || WITH_VECTOR_TEXTURES)
 #define WITH_SPRITE_OUTLINES 1
 
@@ -41,7 +41,7 @@ struct QueuedDrawable
 	};
 	
 	DrawableType type;
-	bool invert;
+	uint8_t colour;
 	int8_t x;
 	int8_t y;
 	uint8_t halfSize;
@@ -57,13 +57,13 @@ public:
 
 	static void Render();
 
-	static void DrawObject(const uint16_t* spriteData, int16_t x, int16_t y, uint8_t scale = 128, AnchorType anchor = AnchorType::Floor, bool invert = false);
+	static void DrawObject(const uint16_t* spriteData, int16_t x, int16_t y, uint8_t scale = 128, AnchorType anchor = AnchorType::Floor, uint8_t colour = 255);
 	static QueuedDrawable* CreateQueuedDrawable(uint8_t inverseCameraDistance);
 	static int8_t GetHorizon(int16_t x);
 	
 	static bool TransformAndCull(int16_t worldX, int16_t worldY, int16_t& outScreenX, int16_t& outScreenW);
 
-	static void DrawScaled(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, bool invert = false);
+	static void DrawScaled(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, uint8_t colour = 255);
 	
 private:
 	static int8_t horizonBuffer[DISPLAY_WIDTH];
@@ -74,8 +74,8 @@ private:
 	static void DrawBackground();
 
 #if WITH_IMAGE_TEXTURES
-	static void DrawWallSegment(const uint16_t* texture, int16_t x1, int16_t w1, int16_t x2, int16_t w2, uint8_t u1clip, uint8_t u2clip, bool edgeLeft, bool edgeRight, bool shadeEdge);
-	static void DrawWall(const uint16_t* texture, int16_t x1, int16_t y1, int16_t x2, int16_t y2, bool edgeLeft, bool edgeRight, bool shadeEdge);
+	static void DrawWallSegment(const uint8_t* texture, int16_t x1, int16_t w1, int16_t x2, int16_t w2, uint8_t u1clip, uint8_t u2clip, uint8_t lighting1, uint8_t lighting2);
+	static void DrawWall(const uint8_t* texture, int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 #elif WITH_VECTOR_TEXTURES
 	static void DrawWallLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint8_t clipLeft, uint8_t clipRight, uint8_t col);
 	static void DrawWallSegment(const uint8_t* texture, int16_t x1, int16_t w1, int16_t x2, int16_t w2, uint8_t u1clip, uint8_t u2clip, bool edgeLeft, bool edgeRight, uint8_t lighting1, uint8_t lighting2);
@@ -99,7 +99,7 @@ private:
 	static void DrawBar(int y, const uint8_t* iconData, uint8_t amount, uint8_t max);
 	static void DrawDamageIndicator();
 	
-	static void QueueSprite(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, bool invert = false);
+	static void QueueSprite(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, uint8_t colour = 255);
 	static void RenderQueuedDrawables();
 		
 

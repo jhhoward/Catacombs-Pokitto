@@ -42,7 +42,7 @@
 #define INPUT_B 32
 #define INPUT_START 64
 
-#define COLOUR_WHITE 1
+#define COLOUR_WHITE 255
 #define COLOUR_BLACK 0
 
 #define FIXED_ANGLE_MAX 256

@@ -4,6 +4,7 @@
 #include "Defines.h"
 #include "Game.h"
 #include "Font.h"
+#include "Generated/Palette.inc.h"
 
 Pokitto::Core pokitto;
 unsigned long lastTimingSample;
@@ -122,7 +123,7 @@ void Platform::DrawSprite(int16_t x, int16_t y, const uint8_t *bitmap, uint8_t f
 				{
 					if (pixels & bitmask)
 					{
-						PutPixel(x + i, y + j, 1);
+						PutPixel(x + i, y + j, COLOUR_WHITE);
 					}
 					else
 					{
@@ -153,7 +154,7 @@ int main()
     using PD=Pokitto::Display;
     PC::begin();
     PD::persistence = true;
-    PD::invisiblecolor = 255;
+    PD::invisiblecolor = 256;
 
     lastTimingSample = Pokitto::Core::getTime();
 
@@ -164,7 +165,7 @@ int main()
 
     Game::Init();
 
-    uint8_t bright[3] = { 255, 198, 145 };
+    /*uint8_t bright[3] = { 255, 198, 145 };
     uint8_t dark[3] = { 14, 20, 32 };
     for(int n = 0; n < 16; n++)
     {
@@ -173,8 +174,19 @@ int main()
         uint8_t g = (intensity * bright[1] + (255 - intensity) * dark[1]) / 256;
         uint8_t b = (intensity * bright[2] + (255 - intensity) * dark[2]) / 256;
         PD::paletteptr[n + 16] = PD::RGBto565(r, g, b);
-    }
+    }*/
+    PD::load565Palette(GamePalette);
 
+    const bool visualiseLighting = false;
+    
+    if(visualiseLighting)
+    {
+        for(int n = 0; n < 256; n++)
+        {
+            uint8_t intensity = (uint8_t) (((n & 0xf) * 255) / 15);
+            PD::paletteptr[n] = PD::RGBto565(intensity, intensity, intensity);
+        }
+    }
     
     while( PC::isRunning() )
     {
@@ -190,7 +202,7 @@ int main()
     	{
     		Game::Tick();
     		tickAccum -= frameDuration;
-    		tickAccum = 0;
+    		//tickAccum = 0;
     	}
 
         timingSample = Pokitto::Core::getTime();

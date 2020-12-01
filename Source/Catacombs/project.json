@@ -465,6 +465,15 @@
 		},
 		"\\Generated\\FloorLUT.inc.h": {
 			"sdcard": false
+		},
+		"\\Generated\\Palette.inc.h": {
+			"sdcard": false
+		},
+		"\\Generated\\Textures.inc.h": {
+			"sdcard": false
+		},
+		"\\Catacombs.bin.1.gif": {
+			"sdcard": false
 		}
 	},
 	"ideVersion": 10000,

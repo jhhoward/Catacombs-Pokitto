@@ -63,7 +63,7 @@ void Font::DrawChar(int x, int y, char c, uint8_t colour)
         uint8_t slice = fontPtr[i];
         for(int j = 0; j < glyphHeight; j++)
         {
-            uint8_t outColour = (slice & (1 << j)) == 0 ? colour : !colour;
+            uint8_t outColour = (slice & (1 << j)) == 0 ? colour : (!colour) * 255;
             Platform::PutPixel(x + i, y + j, outColour);
         }
     }

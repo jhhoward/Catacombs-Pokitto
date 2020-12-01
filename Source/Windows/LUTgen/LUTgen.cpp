@@ -1,6 +1,10 @@
 #include <stdio.h>
+#include <iostream>
+#include <fstream>
 #include "Defines.h"
 #include "FixedMath.h"
+
+using namespace std;
 
 #define SCALE_LUT_SIZE (((MAX_SPRITE_SIZE + 2) / 2) * ((MAX_SPRITE_SIZE + 2) / 2))
 int16_t gen_sinTable[FIXED_ANGLE_MAX];
@@ -26,6 +30,31 @@ void GenerateLUT()
 			gen_scaleLUT[pos++] = BASE_SPRITE_SIZE - 1;
 		}
 	}
+}
+
+void GenerateFloorLUT()
+{
+	ofstream fs;
+
+	fs.open("FloorLUT.inc.h");
+
+	for (int x = 0; x < DISPLAY_WIDTH; x++)
+	{
+		for (int w = 0; w < DISPLAY_HEIGHT / 2; w++)
+		{
+			int wDepth = w;
+			int viewZ = wDepth > 0 ? (CELL_SIZE / 2 * NEAR_PLANE * CAMERA_SCALE) / wDepth : 0;
+
+			int vx = x - (DISPLAY_WIDTH / 2);
+			int viewX = (vx * viewZ) / (NEAR_PLANE * CAMERA_SCALE);
+
+			fs << viewX << ", " << viewZ << ", ";
+		}
+		fs << endl;
+	}
+
+	fs.close();
+
 }
 
 int main(int argc, char* argv[])

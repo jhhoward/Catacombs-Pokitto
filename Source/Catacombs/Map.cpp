@@ -306,15 +306,21 @@ void Map::AddDynamicLight(int x, int y, int brightness)
     
     int tileX = x >> 8;
     int tileY = y >> 8;
-    for(int i = -1; i <= 1; i++)
+    for(int i = -2; i <= 2; i++)
     {
         int tx = tileX + i;
+        if(tx < 0 || tx >= width)
+            continue;
+        
         int sampleX = tx * CELL_SIZE + (CELL_SIZE / 2);
         int diffXSqr = (sampleX - x) * (sampleX - x);
-        for(int j = -1; j <= 1; j++)
+        for(int j = -2; j <= 2; j++)
         {
             int ty = tileY + j;
             
+            if(ty < 0 || ty >= height)
+                continue;
+                
             if(lightMap[ty * width + tx] != 0)
             {
                 int sampleY = ty * CELL_SIZE + (CELL_SIZE / 2);
