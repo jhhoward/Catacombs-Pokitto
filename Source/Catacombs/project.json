@@ -474,6 +474,12 @@
 		},
 		"\\Catacombs.bin.1.gif": {
 			"sdcard": false
+		},
+		"\\Catacombs.bin.1.png": {
+			"sdcard": false
+		},
+		"\\Catacombs.bin.1.h": {
+			"sdcard": false
 		}
 	},
 	"ideVersion": 10000,

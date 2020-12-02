@@ -246,6 +246,9 @@ void Renderer::DrawWallSegment(int16_t x1, int16_t w1, int16_t x2, int16_t w2, b
 			int alpha = 256 * (x - x1) / (x2 - x1);
 			int u = (alpha * u2clip + (256 - alpha) * u1clip) / 256;
 
+			uint8_t sliceLighting = (u * lighting2 + (16 - u) * lighting1) / 16;
+
+/*
 			int dither1 = (x & 1) ? -1 : 2;
 			int dither2 = (x & 1) ? 1 : 0;
 			
@@ -258,20 +261,8 @@ void Renderer::DrawWallSegment(int16_t x1, int16_t w1, int16_t x2, int16_t w2, b
 			int u2 = (alpha2 * u2clip + (256 - alpha2) * u1clip) / 256;
 			u2 = u + dither2;
 			uint8_t sliceLighting2 = (u2 * lighting2 + (16 - u2) * lighting1) / 16;
+*/			
 			
-			//u1 = u + dither1;
-			//u2 = u + dither2;
-			
-			//uint8_t sliceLighting = lighting;// + CalculateDistanceLighting(w);
-			//if(sliceLighting > 15)
-			 //   sliceLighting = 15;
-
-			/*
-			if ((edgeLeft && x == x1) || (edgeRight && x == x2))
-			{
-			    // disable outlines
-			//	sliceColour = 0;
-			}*/
 
 #if WITH_IMAGE_TEXTURES
 			{
@@ -290,11 +281,13 @@ void Renderer::DrawWallSegment(int16_t x1, int16_t w1, int16_t x2, int16_t w2, b
 				    int v = (16 * wallPos) / wallSize;
 				    uint8_t outColour = texturePtr[v * 16];
 				    
-				    if(y & 1)
+				    /*if(y & 1)
 				        outColour |= sliceLighting1;
 				    else
 				        outColour |= sliceLighting2;
-				        
+				      */
+				    outColour |= sliceLighting; 
+				      
 				    *screenPtr = outColour;
 				    //Platform::PutPixel(x, y, outColour);
 				    wallPos++;
@@ -663,7 +656,7 @@ void Renderer::DrawCell(uint8_t x, uint8_t y)
 	{
 	case CellType::Torch:
 	{
-		const uint16_t* torchSpriteData = Game::globalTickFrame & 4 ? torchSpriteData1 : torchSpriteData2;
+		const uint8_t* torchSpriteData = Game::globalTickFrame & 4 ? torchSpriteData1 : torchSpriteData2;
 		constexpr uint8_t torchScale = 75;
 
 		if (Map::IsSolid(x - 1, y))
@@ -854,7 +847,51 @@ void Renderer::DrawCells()
 	}	
 }
 
-void DrawScaledOutline(const uint16_t* data, int x, int y, uint8_t halfSize, uint8_t inverseCameraDistance, uint8_t colour)
+void DrawScaledOutline(const uint8_t* data, int x, int y, uint8_t halfSize, uint8_t inverseCameraDistance, uint8_t colour)
+{
+	uint8_t size = 2 * halfSize;
+
+	int i0 = x < 0 ? -x : 0;
+	int i1 = x + size > DISPLAY_WIDTH ? DISPLAY_WIDTH - x : size;
+	int j0 = y < 0 ? -y : 0;
+	int j1 = y + size > DISPLAY_HEIGHT ? DISPLAY_HEIGHT - y : size;
+
+	int outX = x >= 0 ? x : 0;
+
+	bool wasVisible = false;
+	
+	for (int i = i0; i < i1; i++)
+	{
+		const bool isVisible = Renderer::wBuffer[outX] < inverseCameraDistance;
+
+		if (isVisible)
+		{
+			uint16_t leftRightOutlineColumn = 0;
+
+			int u = (i * 16) / size;
+            int outY = y >= 0 ? y : 0;
+			uint8_t* screenBuffer = Platform::GetScreenBuffer() + outX + outY * DISPLAY_WIDTH;
+			const uint8_t* spriteColumn = data + 16 * u;
+
+			for (uint8_t j = j0; j < j1; j++)
+			{
+				int v = (j * 16) / size;
+				uint8_t pixel = spriteColumn[v];
+				if(pixel != TRANSPARENT_INDEX)
+				{
+				    *screenBuffer = (pixel | colour);
+				}
+				screenBuffer += DISPLAY_WIDTH;
+			}
+		}
+
+		outX++;
+		wasVisible = isVisible;
+	}
+    
+}
+
+void DrawScaledOutlineMono(const uint16_t* data, int x, int y, uint8_t halfSize, uint8_t inverseCameraDistance, uint8_t colour)
 {
 	uint8_t size = 2 * halfSize;
 
@@ -1234,9 +1271,11 @@ inline void DrawScaledNoOutline(const uint16_t* data, int8_t x, int8_t y, uint8_
 	}
 }
 
-void Renderer::DrawScaled(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, uint8_t colour)
+void Renderer::DrawScaled(const uint8_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, uint8_t colour)
 {
-	if (halfSize > 2)
+	DrawScaledOutline(data, x, y, halfSize, inverseCameraDistance, colour);
+
+/*	if (halfSize > 2)
 	{
 		DrawScaledOutline(data, x, y, halfSize, inverseCameraDistance, colour);
 	}
@@ -1259,7 +1298,7 @@ void Renderer::DrawScaled(const uint16_t* data, int8_t x, int8_t y, uint8_t half
 		{
 			Platform::PutPixel(x, y, COLOUR_BLACK);
 		}
-	}
+	}*/
 }
 
 QueuedDrawable* Renderer::CreateQueuedDrawable(uint8_t inverseCameraDistance)
@@ -1326,7 +1365,7 @@ QueuedDrawable* Renderer::CreateQueuedDrawable(uint8_t inverseCameraDistance)
 	return &queuedDrawables[insertionPoint];
 }
 
-void Renderer::QueueSprite(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, uint8_t colour)
+void Renderer::QueueSprite(const uint8_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, uint8_t colour)
 {
 	if(x < -halfSize * 2)
 		return;
@@ -1394,7 +1433,7 @@ bool Renderer::TransformAndCull(int16_t worldX, int16_t worldY, int16_t& outScre
 	return true;
 }
 
-void Renderer::DrawObject(const uint16_t* spriteData, int16_t x, int16_t y, uint8_t scale, AnchorType anchor, uint8_t colour)
+void Renderer::DrawObject(const uint8_t* spriteData, int16_t x, int16_t y, uint8_t scale, AnchorType anchor, uint8_t colour)
 {
 	int16_t screenX, screenW;
 
@@ -1422,8 +1461,39 @@ void Renderer::DrawObject(const uint16_t* spriteData, int16_t x, int16_t y, uint
 		
 		uint8_t lighting = Map::SampleWorldLighting(x, y);
 		
-		QueueSprite(spriteData, screenX - spriteSize, outY, (uint8_t)spriteSize, inverseCameraDistance, lighting | 0xf0);
+		QueueSprite(spriteData, screenX - spriteSize, outY, (uint8_t)spriteSize, inverseCameraDistance, lighting);
 	}
+}
+
+void Renderer::DrawSprite(const uint8_t* spriteData, int x, int y, uint8_t lighting)
+{
+    uint8_t* screenBuffer = Platform::GetScreenBuffer();
+    int width = spriteData[0];
+    int height = spriteData[1];
+    spriteData += 2;
+    
+    for(int j = 0; j < height; j++)
+    {
+        int outY = y + j;
+        
+        if(outY < 0 || outY >= DISPLAY_HEIGHT)
+            continue;
+            
+        for(int i = 0; i < width; i++)
+        {
+            int outX = x + i;
+            
+            if(outX < 0 || outX >= DISPLAY_WIDTH)
+                continue;
+            
+            uint8_t colour = spriteData[j * width + i];
+            if(colour != TRANSPARENT_INDEX)
+            {
+                colour |= lighting;
+                screenBuffer[outY * DISPLAY_WIDTH + outX] = colour;
+            }
+        }
+    }
 }
 
 void Renderer::DrawWeapon()
@@ -1432,14 +1502,16 @@ void Renderer::DrawWeapon()
 	int y = DISPLAY_HEIGHT - 21 - camera.bob;
 	uint8_t reloadTime = Game::player.reloadTime;
 	
+	uint8_t lighting = Map::SampleWorldLighting(camera.x, camera.y);
+	
 	if(reloadTime > 0)
 	{
-		Platform::DrawSprite(x - reloadTime / 3 - 1, y - reloadTime / 3 - 1, handSpriteData2, 0);
+		DrawSprite(handSpriteData2, x - reloadTime / 3 - 1, y - reloadTime / 3 - 1, 0xf);
 		//DrawSprite(x - reloadTime / 3 - 1, y - reloadTime / 3 - 1, handSpriteData2, handSpriteData2_mask, 0, 0);	
 	}
 	else
 	{
-		Platform::DrawSprite(x + 2, y + 2, handSpriteData1, 0);
+		DrawSprite(handSpriteData1, x + 2, y + 2, lighting);
 		//DrawSprite(x + 2, y + 2, handSpriteData1, handSpriteData1_mask, 0, 0);	
 	}
 	
@@ -1457,6 +1529,7 @@ void Renderer::DrawBackground()
     const uint8_t* ceilingTexture = ColourTextures + (256 * 2);
 	int16_t rotCos = FixedCos(camera.angle); 
 	int16_t rotSin = FixedSin(camera.angle);
+	constexpr int lutColumnHeight = DISPLAY_HEIGHT / 2 + 4;
 
     int index = 0;
 
@@ -1464,10 +1537,18 @@ void Renderer::DrawBackground()
     {
 	    uint8_t* screenPtr = Platform::GetScreenBuffer() + x;
 	    
-	    for(int w = wBuffer[x] + 1; w < DISPLAY_HEIGHT / 2; w++)
+	    for(int w = wBuffer[x] + 1; w < lutColumnHeight; w++)
         //for(int y = 0; y < DISPLAY_HEIGHT; y++)
         {
-            index = ((DISPLAY_HEIGHT / 2) * x + w) * 2;
+            int y1 = horizonBuffer[x] - w;
+            int y2 = horizonBuffer[x] + w;
+
+            if(y1 < 0 && y2 >= DISPLAY_HEIGHT)
+            {
+                break;
+            }
+
+            index = (lutColumnHeight * x + w) * 2;
             int viewX = floorLUT[index++];
             int viewZ = floorLUT[index++];
             
@@ -1523,9 +1604,6 @@ void Renderer::DrawBackground()
 
 
             uint8_t lighting = Map::SampleWorldLighting(worldX, worldY);
-
-            int y1 = horizonBuffer[x] - w;
-            int y2 = horizonBuffer[x] + w;
 
             if(y1 >= 0)
                 screenPtr[y1 * DISPLAY_WIDTH] = ceilingTexture[ty * 16 + tx] | lighting;

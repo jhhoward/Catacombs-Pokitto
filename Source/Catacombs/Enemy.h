@@ -27,7 +27,7 @@ enum class EnemyState : uint8_t
 
 struct EnemyArchetype
 {
-	const uint16_t* spriteData;
+	const uint8_t* spriteData;
 
 	uint8_t hp;
 	uint8_t movementSpeed;
@@ -38,7 +38,7 @@ struct EnemyArchetype
 	uint8_t spriteScale;
 	AnchorType spriteAnchor;
 
-	uint16_t* GetSpriteData() const		{ return (uint16_t*) pgm_read_ptr(&spriteData); }
+	uint8_t* GetSpriteData() const		{ return (uint8_t*) pgm_read_ptr(&spriteData); }
 	uint8_t GetHP() const				{ return pgm_read_byte(&hp); }
 	uint8_t GetMovementSpeed() const	{ return pgm_read_byte(&movementSpeed); }
 	uint8_t GetAttackStrength() const	{ return pgm_read_byte(&attackStrength); }

@@ -5,6 +5,7 @@
 #define WITH_VECTOR_TEXTURES 0
 #define WITH_TEXTURES (WITH_IMAGE_TEXTURES || WITH_VECTOR_TEXTURES)
 #define WITH_SPRITE_OUTLINES 1
+#define TRANSPARENT_INDEX 0xf
 
 struct Camera
 {
@@ -36,7 +37,7 @@ struct QueuedDrawable
 {
 	union
 	{
-		const uint16_t* spriteData;
+		const uint8_t* spriteData;
 		struct ParticleSystem* particleSystem;
 	};
 	
@@ -57,13 +58,15 @@ public:
 
 	static void Render();
 
-	static void DrawObject(const uint16_t* spriteData, int16_t x, int16_t y, uint8_t scale = 128, AnchorType anchor = AnchorType::Floor, uint8_t colour = 255);
+    static void DrawSprite(const uint8_t* spriteData, int x, int y, uint8_t lighting = 0xf);
+
+	static void DrawObject(const uint8_t* spriteData, int16_t x, int16_t y, uint8_t scale = 128, AnchorType anchor = AnchorType::Floor, uint8_t colour = 0xf);
 	static QueuedDrawable* CreateQueuedDrawable(uint8_t inverseCameraDistance);
 	static int8_t GetHorizon(int16_t x);
 	
 	static bool TransformAndCull(int16_t worldX, int16_t worldY, int16_t& outScreenX, int16_t& outScreenW);
 
-	static void DrawScaled(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, uint8_t colour = 255);
+	static void DrawScaled(const uint8_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, uint8_t colour = 0xf);
 	
 private:
 	static int8_t horizonBuffer[DISPLAY_WIDTH];
@@ -99,7 +102,7 @@ private:
 	static void DrawBar(int y, const uint8_t* iconData, uint8_t amount, uint8_t max);
 	static void DrawDamageIndicator();
 	
-	static void QueueSprite(const uint16_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, uint8_t colour = 255);
+	static void QueueSprite(const uint8_t* data, int8_t x, int8_t y, uint8_t halfSize, uint8_t inverseCameraDistance, uint8_t colour = 0xf);
 	static void RenderQueuedDrawables();
 		
 

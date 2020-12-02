@@ -31,7 +31,7 @@ void Menu::Draw()
 	
 	Font::PrintString(PSTR(">"), 4 + selection, 16, COLOUR_WHITE);
 	
-	const uint16_t* torchSprite = Game::globalTickFrame & 4 ? torchSpriteData1 : torchSpriteData2;
+	const uint8_t* torchSprite = Game::globalTickFrame & 4 ? torchSpriteData1 : torchSpriteData2;
 	Renderer::DrawScaled(torchSprite, 0, 10, 9, 255);
 	Renderer::DrawScaled(torchSprite, DISPLAY_WIDTH - 18, 10, 9, 255);
 }
@@ -160,7 +160,7 @@ void Menu::DrawGameOver()
 	Font::PrintInt(Game::stats.coinsCollected, 6, 48, COLOUR_WHITE);
 
 	///
-	int offset = (Game::globalTickFrame & 8) == 0 ? 32 : 0;
+	int offset = (Game::globalTickFrame & 8) == 0 ? 256 : 0;
 	Font::PrintString(PSTR("KILLS:"), 2, 84, COLOUR_WHITE);
 
 	Renderer::DrawScaled(skeletonSpriteData + offset, 66, firstRow, 9, 255);

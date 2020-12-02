@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
+
+#define POKITTO
 #include "Defines.h"
 #include "FixedMath.h"
 
@@ -35,12 +37,13 @@ void GenerateLUT()
 void GenerateFloorLUT()
 {
 	ofstream fs;
+	int lutColumnHeight = DISPLAY_HEIGHT / 2 + 4;
 
-	fs.open("FloorLUT.inc.h");
+	fs.open("Source/Catacombs/Generated/FloorLUT.inc.h");
 
 	for (int x = 0; x < DISPLAY_WIDTH; x++)
 	{
-		for (int w = 0; w < DISPLAY_HEIGHT / 2; w++)
+		for (int w = 0; w < lutColumnHeight; w++)
 		{
 			int wDepth = w;
 			int viewZ = wDepth > 0 ? (CELL_SIZE / 2 * NEAR_PLANE * CAMERA_SCALE) / wDepth : 0;
@@ -59,10 +62,11 @@ void GenerateFloorLUT()
 
 int main(int argc, char* argv[])
 {
+	GenerateFloorLUT();
 	GenerateLUT();
 
 	FILE* fs;
-	fopen_s(&fs, "LUT.h", "w");
+	fopen_s(&fs, "Source/Catacombs/LUT.h", "w");
 
 	fprintf(fs, "const uint8_t scaleLUT[] PROGMEM = {\n\t");
 	for (int n = 0; n < SCALE_LUT_SIZE; n++)

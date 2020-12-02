@@ -571,6 +571,110 @@ void EncodeColourTextures(const char* filename)
 	}
 }
 
+void EncodeColourSprite3D(ofstream& typefs, ofstream& fs, const char* inputPath, const char* variableName)
+{
+	vector<uint8_t> pixels;
+	unsigned width, height;
+	unsigned error = lodepng::decode(pixels, width, height, inputPath);
+
+	if (error)
+	{
+		cout << inputPath << " : decoder error " << error << ": " << lodepng_error_text(error) << endl;
+		return;
+	}
+
+	if (height != 16)
+	{
+		cout << inputPath << " : sprite must be 16 pixels high" << endl;
+		return;
+	}
+	if ((width % 16) != 0)
+	{
+		cout << inputPath << " : sprite width must be multiple of 16 pixels" << endl;
+		return;
+	}
+
+	unsigned int numFrames = width / 16;
+	typefs << "// Generated from " << inputPath << endl;
+	typefs << "constexpr uint8_t " << variableName << "_numFrames = " << dec << numFrames << ";" << endl;
+	typefs << "extern const uint8_t " << variableName << "[];" << endl;
+
+	fs << "// Generated from " << inputPath << endl;
+	fs << "constexpr uint8_t " << variableName << "_numFrames = " << dec << numFrames << ";" << endl;
+	fs << "extern const uint8_t " << variableName << "[] PROGMEM =" << endl;
+	fs << "{" << endl << "\t";
+
+	for (unsigned x = 0; x < width; x++)
+	{
+		for (unsigned y = 0; y < height; y++)
+		{
+			int index = (y * width + x) * 4;
+			int paletteIndex = GetPaletteIndex(pixels[index], pixels[index + 1], pixels[index + 2]);
+			paletteIndex <<= 4;
+
+			if (pixels[index + 3] != 255)
+			{
+				paletteIndex = 0xf;
+			}
+
+			fs << paletteIndex;
+			if (y != height - 1 || x != width - 1)
+			{
+				fs << ", ";
+			}
+		}
+	}
+
+	fs << endl;
+	fs << "};" << endl;
+}
+
+void EncodeColourSprite2D(ofstream& typefs, ofstream& fs, const char* inputPath, const char* variableName)
+{
+	vector<uint8_t> pixels;
+	unsigned width, height;
+	unsigned error = lodepng::decode(pixels, width, height, inputPath);
+
+	if (error)
+	{
+		cout << inputPath << " : decoder error " << error << ": " << lodepng_error_text(error) << endl;
+		return;
+	}
+
+	typefs << "// Generated from " << inputPath << endl;
+	typefs << "extern const uint8_t " << variableName << "[];" << endl;
+
+	fs << "// Generated from " << inputPath << endl;
+	fs << "extern const uint8_t " << variableName << "[] PROGMEM =" << endl;
+	fs << "{" << endl << "\t";
+
+	fs << width << ", " << height << ", ";
+
+	for (unsigned y = 0; y < height; y++)
+	{
+		for (unsigned x = 0; x < width; x++)
+		{
+			int index = (y * width + x) * 4;
+			int paletteIndex = GetPaletteIndex(pixels[index], pixels[index + 1], pixels[index + 2]);
+			paletteIndex <<= 4;
+
+			if (pixels[index + 3] != 255)
+			{
+				paletteIndex = 0xf;
+			}
+
+			fs << paletteIndex;
+			if (y != height - 1 || x != width - 1)
+			{
+				fs << ", ";
+			}
+		}
+	}
+
+	fs << endl;
+	fs << "};" << endl;
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -588,9 +692,8 @@ int main(int argc, char* argv[])
 	dataFile.open(spriteDataHeaderOutputPath);
 	typeFile.open(spriteTypesHeaderOutputPath);
 
-	EncodeSprite3D(typeFile, dataFile, "Images/enemy.png", "skeletonSpriteData");
+/*	EncodeSprite3D(typeFile, dataFile, "Images/enemy.png", "skeletonSpriteData");
 	EncodeSprite3D(typeFile, dataFile, "Images/mage.png", "mageSpriteData");
-//	EncodeSprite3D(typeFile, dataFile, "Images/skeleton.png", "skeletonSpriteData");
 	EncodeSprite3D(typeFile, dataFile, "Images/torchalt1.png", "torchSpriteData1");
 	EncodeSprite3D(typeFile, dataFile, "Images/torchalt2.png", "torchSpriteData2");
 	EncodeSprite3D(typeFile, dataFile, "Images/fireball2.png", "projectileSpriteData");
@@ -607,9 +710,32 @@ int main(int argc, char* argv[])
 	EncodeSprite3D(typeFile, dataFile, "Images/potion.png", "potionSpriteData");
 	EncodeSprite3D(typeFile, dataFile, "Images/bat.png", "batSpriteData");
 	EncodeSprite3D(typeFile, dataFile, "Images/spider.png", "spiderSpriteData");
+	*/
 
-	EncodeSprite2D(typeFile, dataFile, "Images/hand1.png", "handSpriteData1");
-	EncodeSprite2D(typeFile, dataFile, "Images/hand2.png", "handSpriteData2");
+	EncodeColourSprite3D(typeFile, dataFile, "Images/enemyc.png", "skeletonSpriteData");
+	EncodeColourSprite3D(typeFile, dataFile, "Images/magec.png", "mageSpriteData");
+	EncodeColourSprite3D(typeFile, dataFile, "Images/torchalt1c.png", "torchSpriteData1");
+	EncodeColourSprite3D(typeFile, dataFile, "Images/torchalt2c.png", "torchSpriteData2");
+	EncodeColourSprite3D(typeFile, dataFile, "Images/fireball2c.png", "projectileSpriteData");
+	EncodeColourSprite3D(typeFile, dataFile, "Images/fireballc.png", "enemyProjectileSpriteData");
+	EncodeColourSprite3D(typeFile, dataFile, "Images/entrancec.png", "entranceSpriteData");
+	EncodeColourSprite3D(typeFile, dataFile, "Images/exitc.png", "exitSpriteData");
+	EncodeColourSprite3D(typeFile, dataFile, "Images/urnc.png", "urnSpriteData");
+	EncodeColourSprite3D(typeFile, dataFile, "Images/signc.png", "signSpriteData");
+	EncodeColourSprite3D(typeFile, dataFile, "Images/crownc.png", "crownSpriteData");
+	EncodeColourSprite3D(typeFile, dataFile, "Images/coinsc.png", "coinsSpriteData");
+	EncodeColourSprite3D(typeFile, dataFile, "Images/scrollc.png", "scrollSpriteData");
+	EncodeColourSprite3D(typeFile, dataFile, "Images/chestc.png", "chestSpriteData");
+	EncodeColourSprite3D(typeFile, dataFile, "Images/chestopenc.png", "chestOpenSpriteData");
+	EncodeColourSprite3D(typeFile, dataFile, "Images/potionc.png", "potionSpriteData");
+	EncodeColourSprite3D(typeFile, dataFile, "Images/batc.png", "batSpriteData");
+	EncodeColourSprite3D(typeFile, dataFile, "Images/spiderc.png", "spiderSpriteData");
+
+	EncodeColourSprite2D(typeFile, dataFile, "Images/hand1c.png", "handSpriteData1");
+	EncodeColourSprite2D(typeFile, dataFile, "Images/hand2c.png", "handSpriteData2");
+
+	//EncodeSprite2D(typeFile, dataFile, "Images/hand1.png", "handSpriteData1");
+	//EncodeSprite2D(typeFile, dataFile, "Images/hand2.png", "handSpriteData2");
 
 	EncodeTextures(typeFile, dataFile, "Images/textures.png", "wallTextureData");
 

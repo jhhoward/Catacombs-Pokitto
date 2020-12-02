@@ -391,10 +391,10 @@ void EnemyManager::Draw()
 		if(enemy.IsValid())
 		{
 			bool invert = enemy.GetState() == EnemyState::Stunned && (Renderer::globalRenderFrame & 1);
-			int frameOffset = (enemy.GetType() == EnemyType::Bat || enemy.GetState() == EnemyState::Moving) && (Game::globalTickFrame & 8) == 0 ? 32 : 0;
-
+			int frameOffset = (enemy.GetType() == EnemyType::Bat || enemy.GetState() == EnemyState::Moving) && (Game::globalTickFrame & 8) == 0 ? 256 : 0;
+			
 			const EnemyArchetype* archetype = enemy.GetArchetype();
-			Renderer::DrawObject(archetype->GetSpriteData() + frameOffset, enemy.x, enemy.y, archetype->GetSpriteScale(), archetype->GetSpriteAnchor(), invert);
+			Renderer::DrawObject(archetype->GetSpriteData() + frameOffset, enemy.x, enemy.y, archetype->GetSpriteScale(), archetype->GetSpriteAnchor());
 		}
 	}
 }
