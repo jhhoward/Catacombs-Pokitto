@@ -1499,7 +1499,7 @@ void Renderer::DrawSprite(const uint8_t* spriteData, int x, int y, uint8_t light
 void Renderer::DrawWeapon()
 {
 	int x = DISPLAY_WIDTH / 2 + 22 + camera.tilt / 4;
-	int y = DISPLAY_HEIGHT - 21 - camera.bob;
+	int y = DISPLAY_HEIGHT - 27 - 11 - camera.bob;
 	uint8_t reloadTime = Game::player.reloadTime;
 	
 	uint8_t lighting = Map::SampleWorldLighting(camera.x, camera.y);
@@ -1720,14 +1720,18 @@ void Renderer::DrawHUD()
 {
 	constexpr uint8_t barWidth = 40;
 
-	DrawBar(DISPLAY_HEIGHT - 16, heartSpriteData, Game::player.hp, Game::player.maxHP);
-	DrawBar(DISPLAY_HEIGHT - 8, manaSpriteData, Game::player.mana, Game::player.maxMana);
+    DrawSprite(statusBarData, 0, DISPLAY_HEIGHT - 11);
+
+    Font::PrintInt(Game::player.hp, 10, 20, COLOUR_WHITE);
+    Font::PrintInt(Game::player.mana, 10, 55, COLOUR_WHITE);
+//	DrawBar(DISPLAY_HEIGHT - 16, heartSpriteData, Game::player.hp, Game::player.maxHP);
+	//DrawBar(DISPLAY_HEIGHT - 8, manaSpriteData, Game::player.mana, Game::player.maxMana);
 
 	if(Game::player.damageTime > 0)
 		DrawDamageIndicator();
 
 	if (Game::displayMessage)
-		Font::PrintString(Game::displayMessage, 0, 0);
+		Font::PrintString(Game::displayMessage, 0, 0, COLOUR_BLACK, COLOUR_WHITE);
 }
 
 void Renderer::Render()

@@ -734,6 +734,8 @@ int main(int argc, char* argv[])
 	EncodeColourSprite2D(typeFile, dataFile, "Images/hand1c.png", "handSpriteData1");
 	EncodeColourSprite2D(typeFile, dataFile, "Images/hand2c.png", "handSpriteData2");
 
+	EncodeColourSprite2D(typeFile, dataFile, "Images/hudc.png", "statusBarData");
+
 	//EncodeSprite2D(typeFile, dataFile, "Images/hand1.png", "handSpriteData1");
 	//EncodeSprite2D(typeFile, dataFile, "Images/hand2.png", "handSpriteData2");
 

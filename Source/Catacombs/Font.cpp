@@ -7,7 +7,7 @@
 #include "Platform.h"
 #include "Generated/SpriteTypes.h"
 
-void Font::PrintString(const char* str, uint8_t line, uint8_t x, uint8_t colour)
+void Font::PrintString(const char* str, uint8_t line, uint8_t x, uint8_t fgColour, uint8_t bgColour)
 {
 	uint8_t* screenPtr = Platform::GetScreenBuffer();
 	int y = line * 8;
@@ -18,19 +18,19 @@ void Font::PrintString(const char* str, uint8_t line, uint8_t x, uint8_t colour)
 		if (!c)
 			break;
 
-		DrawChar(x, y, c, colour);
+		DrawChar(x, y, c, fgColour, bgColour);
 		x += glyphWidth;
 	}
 }
 
-void Font::PrintInt(uint16_t val, uint8_t line, uint8_t x, uint8_t colour)
+void Font::PrintInt(uint16_t val, uint8_t line, uint8_t x, uint8_t fgColour, uint8_t bgColour)
 {
 	uint8_t* screenPtr = Platform::GetScreenBuffer();
 	int y = line * 8;
 
 	if (val == 0)
 	{
-		DrawChar(x, y, '0', colour);
+		DrawChar(x, y, '0', fgColour, bgColour);
 		return;
 	}
 
@@ -47,13 +47,13 @@ void Font::PrintInt(uint16_t val, uint8_t line, uint8_t x, uint8_t colour)
 
 	for (int n = bufCount - 1; n >= 0; n--)
 	{
-		DrawChar(x, y, buffer[n], colour);
+		DrawChar(x, y, buffer[n], fgColour, bgColour);
 		x += glyphWidth;
 	}
 
 }
 
-void Font::DrawChar(int x, int y, char c, uint8_t colour)
+void Font::DrawChar(int x, int y, char c, uint8_t fgColour, uint8_t bgColour)
 {
 	const uint8_t index = ((unsigned char)(c)) - firstGlyphIndex;
 	const uint8_t* fontPtr = fontPageData + glyphWidth * index;
@@ -63,8 +63,11 @@ void Font::DrawChar(int x, int y, char c, uint8_t colour)
         uint8_t slice = fontPtr[i];
         for(int j = 0; j < glyphHeight; j++)
         {
-            uint8_t outColour = (slice & (1 << j)) == 0 ? colour : (!colour) * 255;
-            Platform::PutPixel(x + i, y + j, outColour);
+            uint8_t outColour = (slice & (1 << j)) == 0 ? fgColour : bgColour;
+            if(outColour != 0xf)
+            {
+                Platform::PutPixel(x + i, y + j, outColour);
+            }
         }
     }
 }
