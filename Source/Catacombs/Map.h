@@ -28,6 +28,9 @@ enum class CellType : uint8_t
 
 	// Solid cells
 	BrickWall,
+	WallDecoration1,
+	WallDecoration2,
+	WallDecoration3,
 	
 	FirstCollidableCell = Urn,
 	FirstSolidCell = BrickWall
@@ -62,7 +65,7 @@ public:
 	static uint8_t SampleWorldLighting(int x, int y);
 
 private:	
-	static uint8_t level[width * height / 2];
+	static uint8_t level[width * height];
 	static uint8_t lightMap[width * height];
 	static uint8_t staticLightMap[width * height];
 	

@@ -41,16 +41,7 @@ void Menu::Tick()
 	static uint8_t lastInput = 0;
 	
 	// Spin the RNG to have a unique(ish) starting level
-	//Random();
-	{
-	    static int n = 5;
-	    while(n > 0)
-	    {
-	        Random();
-	        n--;
-	    }
-	}
-	
+	Random();
 
 	if ((Platform::GetInput() & INPUT_DOWN) && !(lastInput & INPUT_DOWN))
 	{

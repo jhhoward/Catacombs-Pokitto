@@ -608,5 +608,41 @@ void MapGenerator::Generate()
 		}
 	}
 	
+	// Add decorative cells
+	{
+	    uint16_t attempts = 65535;
+	    int toSpawn = 16;
+	    
+	    while(attempts > 0 && toSpawn > 0)
+	    {
+	        CellType cellType = (CellType)((int) CellType::BrickWall + 1 + (Random() % 3));
+			uint8_t x = Random() % Map::width;
+			uint8_t y = Random() % Map::height;
+			uint8_t minSpacing = 5;
+			
+		    if(GetDistanceToCellType(x, y, cellType) > minSpacing)
+		    {
+    			if(Map::GetCell(x, y) == CellType::BrickWall)
+    			{
+    			    if(Map::GetCellSafe(x - 1, y) == CellType::BrickWall
+    			    && Map::GetCellSafe(x + 1, y) == CellType::BrickWall
+    			    && (!Map::IsSolid(x, y - 1) || !Map::IsSolid(x, y + 1)))
+    			    {
+    			        Map::SetCell(x, y, cellType);
+    			        toSpawn--;
+    			    }
+    			    else if(Map::GetCellSafe(x, y - 1) == CellType::BrickWall
+    			    && Map::GetCellSafe(x, y + 1) == CellType::BrickWall
+    			    && (!Map::IsSolid(x - 1, y) || !Map::IsSolid(x + 1, y)))
+    			    {
+    			        Map::SetCell(x, y, cellType);
+    			        toSpawn--;
+    			    }
+    			}
+		    }
+			attempts--;
+	    }
+	}
+	
 	Map::GenerateLightMap();
 }

@@ -733,7 +733,8 @@ void Renderer::DrawCell(uint8_t x, uint8_t y)
 	bool blockedDown = Map::IsSolid(x, y + 1);
 
 #if WITH_IMAGE_TEXTURES
-	const uint8_t* texture = ColourTextures;
+    int textureIndex = 2 + ((int)Map::GetCell(x, y) - (int)CellType::FirstSolidCell);
+	const uint8_t* texture = ColourTextures + textureIndex * 256;
 #elif WITH_VECTOR_TEXTURES
 	const uint8_t* texture = vectorTexture0; // (const uint8_t*) pgm_read_ptr(&textures[(uint8_t)cellType - (uint8_t)CellType::FirstSolidCell]);
 #endif
@@ -1526,8 +1527,8 @@ const int16_t floorLUT[] =
 
 void Renderer::DrawBackground()
 {
-    const uint8_t* floorTexture = ColourTextures + (256 * 1);
-    const uint8_t* ceilingTexture = ColourTextures + (256 * 2);
+    const uint8_t* floorTexture = ColourTextures + (256 * 0);
+    const uint8_t* ceilingTexture = ColourTextures + (256 * 1);
 	int16_t rotCos = FixedCos(camera.angle); 
 	int16_t rotSin = FixedSin(camera.angle);
 	constexpr int lutColumnHeight = DISPLAY_HEIGHT / 2 + 4;

@@ -8,6 +8,8 @@ using namespace std;
 
 #define GENERATED_PATH "Source/Catacombs/Generated"
 
+const char* audioDataHeaderOutputPath = GENERATED_PATH "/AudioData.inc.h";
+
 const char* spriteDataHeaderOutputPath = GENERATED_PATH "/SpriteData.inc.h";
 const char* spriteTypesHeaderOutputPath = GENERATED_PATH "/SpriteTypes.h";
 
@@ -749,6 +751,78 @@ void EncodeColourSprite2D(ofstream& typefs, ofstream& fs, const char* inputPath,
 	fs << "};" << endl;
 }
 
+struct wav_hdr_s {
+	uint8_t	RIFF[4];	/* RIFF Header	  */ //Magic header
+	uint32_t ChunkSize;	  /* RIFF Chunk Size  */
+	uint8_t	WAVE[4];	/* WAVE Header	  */
+	uint8_t	fmt[4];	 /* FMT header	   */
+	uint32_t Subchunk1Size;  /* Size of the fmt chunk				*/
+	uint16_t AudioFormat;	/* Audio format 1=PCM,6=mulaw,7=alaw, 257=IBM Mu-Law, 258=IBM A-Law, 259=ADPCM */
+	uint16_t NumOfChan;	  /* Number of channels 1=Mono 2=Sterio		   */
+	uint32_t SamplesPerSec;  /* Sampling Frequency in Hz				 */
+	uint32_t bytesPerSec;	/* bytes per second */
+	uint16_t blockAlign;	 /* 2=16-bit mono, 4=16-bit stereo */
+	uint16_t bitsPerSample;  /* Number of bits per sample	  */
+	uint8_t	Subchunk2ID[4]; /* "data"  string   */
+	uint32_t Subchunk2Size;  /* Sampled data length	*/
+};
+
+
+void EncodeWav(ofstream& ofs, const char* filename, const char* varName)
+{
+	ifstream fs(filename, ios::binary);
+
+	if (!fs.is_open())
+	{
+		cout << "Error loading " << filename << endl;
+		return;
+	}
+
+	wav_hdr_s header;
+	fs.read((char*)&header, sizeof(wav_hdr_s));
+
+	bool success = true;
+
+	if (header.NumOfChan != 1)
+	{
+		cout << filename << " has more than one channel" << endl;
+		success = false;
+	}
+	if (header.bitsPerSample != 8)
+	{
+		cout << filename << " is not 8 bit" << endl;
+		success = false;
+	}
+	if (header.SamplesPerSec != 8000)
+	{
+		cout << filename << " is not 8kHz: is " << header.SamplesPerSec << endl;
+		success = false;
+	}
+	if (header.AudioFormat != 1)
+	{
+		cout << filename << " is not PCM" << endl;
+		success = false;
+	}
+
+	cout << "Expecting " << header.Subchunk2Size << " bytes of data" << endl;
+
+	if (success)
+	{
+		ofs << "// Generated from " << filename << endl;
+		ofs << "const int " << varName << "_length = " << header.Subchunk2Size << ";" << endl;
+		ofs << "const uint8_t " << varName << "[] = {" << endl;
+		for(int n = 0; n < header.Subchunk2Size; n++)
+		{
+			unsigned char sample = 0;
+			fs.read((char*) &sample, 1);
+			ofs << ((int)sample) << ",";
+		}
+		ofs << "};" << endl << endl;
+	}
+
+
+	fs.close();
+}
 
 int main(int argc, char* argv[])
 {
@@ -759,6 +833,11 @@ int main(int argc, char* argv[])
 	}
 
 	EncodeColourTextures("Images/textures-colour.png");
+
+	ofstream audioFile;
+	audioFile.open(audioDataHeaderOutputPath);
+	EncodeWav(audioFile, "Sounds/fireball.wav", "fireballSound");
+	audioFile.close();
 
 	ofstream dataFile;
 	ofstream typeFile;

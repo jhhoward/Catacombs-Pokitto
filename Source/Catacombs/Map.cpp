@@ -6,7 +6,7 @@
 #include "Platform.h"
 #include "Enemy.h"
 
-uint8_t Map::level[Map::width * Map::height / 2];
+uint8_t Map::level[Map::width * Map::height];
 uint8_t Map::lightMap[Map::width * Map::height];
 uint8_t Map::staticLightMap[Map::width * Map::height];
 
@@ -23,16 +23,7 @@ bool Map::IsSolid(uint8_t x, uint8_t y)
 CellType Map::GetCell(uint8_t x, uint8_t y) 
 {
 	int index = y * Map::width + x;
-	uint8_t cellData = level[index / 2];
-	
-	if(index & 1)
-	{
-		return (CellType)(cellData >> 4);
-	}
-	else
-	{
-		return (CellType)(cellData & 0xf);
-	}
+	return (CellType) level[index];
 }
 
 CellType Map::GetCellSafe(uint8_t x, uint8_t y) 
@@ -41,16 +32,7 @@ CellType Map::GetCellSafe(uint8_t x, uint8_t y)
 		return CellType::BrickWall;
 	
 	int index = y * Map::width + x;
-	uint8_t cellData = level[index / 2];
-	
-	if(index & 1)
-	{
-		return (CellType)(cellData >> 4);
-	}
-	else
-	{
-		return (CellType)(cellData & 0xf);
-	}
+	return (CellType)level[index];
 }
 
 void Map::SetCell(uint8_t x, uint8_t y, CellType type)
@@ -60,17 +42,8 @@ void Map::SetCell(uint8_t x, uint8_t y, CellType type)
 		return;
 	}
 
-	int index = (y * Map::width + x) / 2;
-	uint8_t cellType = (uint8_t)type;
-	
-	if(x & 1)
-	{
-		level[index] = (level[index] & 0xf) | (cellType << 4);
-	}
-	else
-	{
-		level[index] = (level[index] & 0xf0) | (cellType & 0xf);
-	}
+	int index = (y * Map::width + x);
+	level[index] = (uint8_t) type;
 }
 
 void Map::DebugDraw()

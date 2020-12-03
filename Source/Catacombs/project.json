@@ -483,6 +483,9 @@
 		},
 		"\\Catacombs.eeprom": {
 			"sdcard": false
+		},
+		"\\Generated\\AudioData.inc.h": {
+			"sdcard": false
 		}
 	},
 	"ideVersion": 10000,
