@@ -15,6 +15,7 @@ constexpr int numColours = 16;
 uint16_t palette[numColours];
 uint8_t paletteRGB[numColours * 3];
 const char* palettePath = "Images/palette.png";
+const char* lightingPath = "Images/lighting.png";
 const char* paletteOutputPath = GENERATED_PATH "/Palette.inc.h";
 const char* texturesOutputPath = GENERATED_PATH "/Textures.inc.h";
 
@@ -474,20 +475,42 @@ int GetPaletteIndex(uint8_t red, uint8_t green, uint8_t blue)
 bool LoadPalette()
 {
 	vector<unsigned char> pixels;
-	unsigned width, height;
-	unsigned error = lodepng::decode(pixels, width, height, palettePath);
-
-	if (error)
 	{
-		cerr << "Error loading palette file" << endl;
-		return false;
+		unsigned width, height;
+		unsigned error = lodepng::decode(pixels, width, height, palettePath);
+
+		if (error)
+		{
+			cerr << "Error loading palette file" << endl;
+			return false;
+		}
+
+		if (width != numColours || height != 1)
+		{
+			cerr << "Palette wrong dimensions" << endl;
+			return false;
+		}
 	}
 
-	if (width != numColours || height != 1)
+	bool useLightingRamp = true;
+	vector<unsigned char> lighting;
 	{
-		cerr << "Palette wrong dimensions" << endl;
-		return false;
+		unsigned width, height;
+		unsigned error = lodepng::decode(lighting, width, height, lightingPath);
+
+		if (error)
+		{
+			cerr << "Error loading lighting file" << endl;
+			return false;
+		}
+
+		if (width != numColours || height != 1)
+		{
+			cerr << "Lighting wrong dimensions" << endl;
+			return false;
+		}
 	}
+
 
 	for (int n = 0; n < numColours; n++)
 	{
@@ -501,6 +524,8 @@ bool LoadPalette()
 	uint8_t bright[3] = { 255, 255, 255 };
 	uint8_t dark[3] = { 14, 20, 32 };
 
+	uint8_t bloody[3] = { 142, 16, 23 };
+
 	ofstream paletteHeader;
 	paletteHeader.open(paletteOutputPath);
 	paletteHeader << "const uint16_t GamePalette[] = {" << endl << "  ";
@@ -508,25 +533,67 @@ bool LoadPalette()
 	{
 		int paletteIndex = n >> 4;
 		int intensity = n & 15;
+		float lightR, lightG, lightB;
 
-		//float alpha = (intensity + 1.0f) / 16.0f;
-		float alpha = (intensity / 15.0f);
-		float lightR = (bright[0] * alpha + dark[0] * (1.0f - alpha)) / 255.0f;
-		float lightG = (bright[1] * alpha + dark[1] * (1.0f - alpha)) / 255.0f;
-		float lightB = (bright[2] * alpha + dark[2] * (1.0f - alpha)) / 255.0f;
+		if (useLightingRamp)
+		{
+			lightR = lighting[intensity * 4] / 255.0f;
+			lightG = lighting[intensity * 4 + 1] / 255.0f;
+			lightB = lighting[intensity * 4 + 2] / 255.0f;
+		}
+		else
+		{
+			float alpha = (intensity / 15.0f);
+			lightR = (bright[0] * alpha + dark[0] * (1.0f - alpha)) / 255.0f;
+			lightG = (bright[1] * alpha + dark[1] * (1.0f - alpha)) / 255.0f;
+			lightB = (bright[2] * alpha + dark[2] * (1.0f - alpha)) / 255.0f;
+		}
 				
 		float r = paletteRGB[paletteIndex * 3] * lightR;
 		float g = paletteRGB[paletteIndex * 3 + 1] * lightG;
 		float b = paletteRGB[paletteIndex * 3 + 2] * lightB;
 		int value565 = ToRGB565((uint8_t)r, (uint8_t)g, (uint8_t)b);
-		//int value565 = ToRGB565((uint8_t)(alpha * paletteRGB[paletteIndex * 3]), (uint8_t)(alpha * paletteRGB[paletteIndex * 3 + 1]), (uint8_t)(alpha * paletteRGB[paletteIndex * 3 + 2]));
-		paletteHeader << value565;
+		paletteHeader << value565 << ", ";
+	}
 
-		if (n != 255)
+	for (int shade = 0; shade < 3; shade++)
+	{
+		float bloodAlpha = (shade + 1.0f) / 5.0f;
+
+		for (int n = 0; n < 256; n++)
 		{
-			paletteHeader << ", ";
+			int paletteIndex = n >> 4;
+			int intensity = n & 15;
+
+			float lightR, lightG, lightB;
+
+			if (useLightingRamp)
+			{
+				lightR = lighting[intensity * 4] / 255.0f;
+				lightG = lighting[intensity * 4 + 1] / 255.0f;
+				lightB = lighting[intensity * 4 + 2] / 255.0f;
+			}
+			else
+			{
+				float alpha = (intensity / 15.0f);
+				lightR = (bright[0] * alpha + dark[0] * (1.0f - alpha)) / 255.0f;
+				lightG = (bright[1] * alpha + dark[1] * (1.0f - alpha)) / 255.0f;
+				lightB = (bright[2] * alpha + dark[2] * (1.0f - alpha)) / 255.0f;
+			}
+
+			float r = paletteRGB[paletteIndex * 3] * lightR;
+			float g = paletteRGB[paletteIndex * 3 + 1] * lightG;
+			float b = paletteRGB[paletteIndex * 3 + 2] * lightB;
+
+			r = bloody[0] * bloodAlpha + (1.0f - bloodAlpha) * r;
+			g = bloody[1] * bloodAlpha + (1.0f - bloodAlpha) * g;
+			b = bloody[2] * bloodAlpha + (1.0f - bloodAlpha) * b;
+
+			int value565 = ToRGB565((uint8_t)r, (uint8_t)g, (uint8_t)b);
+			paletteHeader << value565 << ", ";
 		}
 	}
+
 	//for (int n = 0; n < numColours; n++)
 	//{
 	//	paletteHeader << palette[n];
@@ -553,17 +620,24 @@ void EncodeColourTextures(const char* filename)
 		of.open(texturesOutputPath);
 		of << "const uint8_t ColourTextures[] = {" << endl << "  ";
 
-		for (int y = 0; y < height; y++)
+		int numTextures = height / width;
+
+		for (int t = 0; t < numTextures; t++)
 		{
 			for (int x = 0; x < width; x++)
 			{
-				int p = (y * width + x) * 4;
-				int paletteIndex = GetPaletteIndex(pixels[p], pixels[p + 1], pixels[p + 2]);
-				paletteIndex <<= 4;
-				of << paletteIndex;
-				of << ", ";
+				for (int y = 0; y < width; y++)
+				{
+					int p = (t * width * width + y * width + x) * 4;
+					int paletteIndex = GetPaletteIndex(pixels[p], pixels[p + 1], pixels[p + 2]);
+					paletteIndex <<= 4;
+					of << paletteIndex;
+					of << ", ";
+				}
 			}
+
 		}
+
 		of << endl;
 		of << "};" << endl;
 

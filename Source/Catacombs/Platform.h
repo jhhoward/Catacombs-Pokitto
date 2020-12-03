@@ -17,6 +17,8 @@ public:
 	static void FillScreen(uint8_t col);
 	static void PutPixel(uint8_t x, uint8_t y, uint8_t colour);
 	static void DrawSprite(int16_t x, int16_t y, const uint8_t *bitmap, uint8_t frame);	
+	
+	static void SetPalette(const uint16_t* palette);
 
 	static void DrawVLine(uint8_t x, int y1, int y2, uint8_t pattern);
 

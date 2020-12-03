@@ -56,6 +56,7 @@ public:
 	static uint8_t wBuffer[DISPLAY_WIDTH];
 	static uint8_t globalRenderFrame;
 
+    static void Init();
 	static void Render();
 
     static void DrawSprite(const uint8_t* spriteData, int x, int y, uint8_t lighting = 0xf);

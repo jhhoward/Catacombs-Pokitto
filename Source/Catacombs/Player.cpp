@@ -252,13 +252,14 @@ bool Player::CheckCollisions()
 	int16_t lookAheadY = (y + (FixedSin(angle) * lookAheadDistance) / FIXED_ONE);
 	uint8_t lookAheadCellX = (uint8_t)(lookAheadX / CELL_SIZE);
 	uint8_t lookAheadCellY = (uint8_t)(lookAheadY / CELL_SIZE);
-
+    const uint8_t chestCoinsColour = 0xe0;
+    
 	CellType lookAheadCell = Map::GetCellSafe(lookAheadCellX, lookAheadCellY);
 	switch (lookAheadCell)
 	{
 	case CellType::Chest:
 		Map::SetCell(lookAheadCellX, lookAheadCellY, CellType::ChestOpened);
-		ParticleSystemManager::CreateExplosion(lookAheadX, lookAheadY, true);
+		ParticleSystemManager::CreateExplosion(lookAheadX, lookAheadY, chestCoinsColour, false);
 		Platform::PlaySound(Sounds::Pickup);
 		Game::ShowMessage(PSTR("Found a chest full of treasure!"));
 		Game::stats.chestsOpened++;
@@ -307,7 +308,7 @@ void Player::Damage(uint8_t damageAmount)
 	if(shakeTime < 6)
 		shakeTime = 6;
 
-	damageTime = 8;
+	damageTime = 10;
 	
 	if (hp <= damageAmount)
 	{

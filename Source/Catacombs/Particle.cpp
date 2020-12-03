@@ -1,6 +1,7 @@
 #include "Particle.h"
 #include "FixedMath.h"
 #include "Platform.h"
+#include "Map.h"
 
 ParticleSystem ParticleSystemManager::systems[MAX_SYSTEMS];
 
@@ -41,23 +42,41 @@ void ParticleSystem::Draw(int x, int halfScale)
 {
 	int scale = 2 * halfScale;
 	int8_t horizon = Renderer::GetHorizon(x);
-	uint8_t colour = isWhite ? COLOUR_WHITE : COLOUR_BLACK;
+	uint8_t litColour = colour;
 	
-	for (Particle& p : particles)
+	if(isLight)
 	{
-		if (p.IsActive())
-		{
-			int outX = x + ((p.x * scale) >> 8);
-			int outY = horizon + ((p.y * scale) >> 8);
+	    litColour |= 0xf;
+	}
+	else
+	{
+	    litColour |= Map::SampleWorldLighting(worldX, worldY);
+	}
 
-			if (outX >= 0 && outY >= 0 && outX < DISPLAY_WIDTH - 1 && outY < DISPLAY_HEIGHT - 1 && halfScale >= Renderer::wBuffer[outX])
-			{
-				Platform::PutPixel(outX, outY, colour);
-				Platform::PutPixel(outX + 1, outY, colour);
-				Platform::PutPixel(outX + 1, outY + 1, colour);
-				Platform::PutPixel(outX, outY + 1, colour);
-			}
-		}
+	for (int n = 0; n < PARTICLES_PER_SYSTEM; n++)
+	{
+	    if(life * 2 > n)
+	    {
+    	    Particle& p = particles[n];
+    	    
+    		if (p.IsActive())
+    		{
+    			int outX = x + ((p.x * scale) >> 8);
+    			int outY = horizon + ((p.y * scale) >> 8);
+    
+    			if (outX >= 0 && outY >= 0 && outX < DISPLAY_WIDTH - 1 && outY < DISPLAY_HEIGHT - 1 && halfScale >= Renderer::wBuffer[outX])
+    			{
+    				Platform::PutPixel(outX, outY, litColour);
+    				
+    				if(halfScale > DISPLAY_HEIGHT / 4)
+    				{
+    				    Platform::PutPixel(outX + 1, outY, litColour);
+    				    Platform::PutPixel(outX + 1, outY + 1, litColour);
+    				    Platform::PutPixel(outX, outY + 1, litColour);
+    				}
+    			}
+    		}
+	    }
 	}
 }
 
@@ -72,7 +91,7 @@ void ParticleSystem::Explode()
 		p.velY = (Random() & 31) - 25;
 	}
 	
-	life = 22;
+	life = 32;
 }
 
 void ParticleSystemManager::Draw()
@@ -117,7 +136,7 @@ void ParticleSystemManager::Update()
 	}	
 }
 
-void ParticleSystemManager::CreateExplosion(int16_t worldX, int16_t worldY, bool isWhite)
+ParticleSystem* ParticleSystemManager::CreateExplosion(int16_t worldX, int16_t worldY, uint8_t colour, bool isLight)
 {
 	ParticleSystem* newSystem = nullptr;
 	for(ParticleSystem& system : systems)
@@ -144,6 +163,9 @@ void ParticleSystemManager::CreateExplosion(int16_t worldX, int16_t worldY, bool
 
 	newSystem->worldX = worldX;
 	newSystem->worldY = worldY;
-	newSystem->isWhite = isWhite;
+	newSystem->colour = colour;
+	newSystem->isLight = isLight;
 	newSystem->Explode();
+	
+	return newSystem;
 }

@@ -9,6 +9,7 @@
 #include "Platform.h"
 #include "Enemy.h"
 #include "Font.h"
+#include "Generated/Palette.inc.h"
 
 #include "LUT.h"
 #include "Generated/SpriteData.inc.h"
@@ -271,15 +272,15 @@ void Renderer::DrawWallSegment(int16_t x1, int16_t w1, int16_t x2, int16_t w2, b
 
 				//DrawVLine(x, y1, y2, sliceMask);
 				u = u & 0xf;
-				const uint8_t* texturePtr = texture + u;
+				const uint8_t* texturePtr = texture + u * 16;
 				int wallPos = y1 - (horizon - w);
 				int wallSize = w * 2;
 				uint8_t* screenPtr = Platform::GetScreenBuffer();
 				screenPtr += x + (y1 * DISPLAY_WIDTH);
 				for(int y = y1; y <= y2; y++)
 				{
-				    int v = (16 * wallPos) / wallSize;
-				    uint8_t outColour = texturePtr[v * 16];
+				    int v = (15 * wallPos) / wallSize;
+				    uint8_t outColour = texturePtr[v];
 				    
 				    /*if(y & 1)
 				        outColour |= sliceLighting1;
@@ -287,7 +288,7 @@ void Renderer::DrawWallSegment(int16_t x1, int16_t w1, int16_t x2, int16_t w2, b
 				        outColour |= sliceLighting2;
 				      */
 				    outColour |= sliceLighting; 
-				      
+
 				    *screenPtr = outColour;
 				    //Platform::PutPixel(x, y, outColour);
 				    wallPos++;
@@ -336,11 +337,11 @@ void Renderer::DrawWallSegment(int16_t x1, int16_t w1, int16_t x2, int16_t w2, b
 			w += wstep;
 			werror += dx;
 
-			if (drawSlice && werror < 0 && w <= DISPLAY_HEIGHT / 2)
+			/*if (drawSlice && werror < 0 && w <= DISPLAY_HEIGHT / 2)
 			{
 				Platform::PutPixel(x, horizon + w - 1, edgeColour);
 				Platform::PutPixel(x, horizon - w, edgeColour);
-			}
+			}*/
 		}
 	}
 	
@@ -1716,6 +1717,8 @@ void Renderer::DrawDamageIndicator()
 	}*/
 }
 
+#include <stdio.h>
+
 void Renderer::DrawHUD()
 {
 	constexpr uint8_t barWidth = 40;
@@ -1732,6 +1735,17 @@ void Renderer::DrawHUD()
 
 	if (Game::displayMessage)
 		Font::PrintString(Game::displayMessage, 0, 0, COLOUR_BLACK, COLOUR_WHITE);
+
+    int offset = Game::player.damageTime / 3;
+    if(offset > 3)
+        offset = 3;
+        
+    Platform::SetPalette(GamePalette + offset * 256);
+}
+
+void Renderer::Init()
+{
+    Platform::SetPalette(GamePalette);
 }
 
 void Renderer::Render()
@@ -1757,7 +1771,7 @@ void Renderer::Render()
     }
     for(ParticleSystem& p : ParticleSystemManager::systems)
     {
-        if(p.IsActive())
+        if(p.IsActive() && p.isLight)
         {
             Map::AddDynamicLight(p.worldX, p.worldY, p.life);
         }

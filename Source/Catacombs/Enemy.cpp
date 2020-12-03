@@ -83,7 +83,8 @@ void Enemy::Damage(uint8_t amount)
 		Game::stats.enemyKills[(int)type]++;
 		type = EnemyType::None;
 		Platform::PlaySound(Sounds::Kill);
-		ParticleSystemManager::CreateExplosion(x, y, true);
+		uint8_t enemyExplosionColour = 0x60;
+		ParticleSystemManager::CreateExplosion(x, y, enemyExplosionColour, false);
 	}
 	else
 	{

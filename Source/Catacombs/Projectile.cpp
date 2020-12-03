@@ -74,7 +74,8 @@ void ProjectileManager::Update()
 				if (Map::GetCellSafe(cellX, cellY) == CellType::Urn)
 				{
 					Map::SetCell(cellX, cellY, CellType::Empty);
-					ParticleSystemManager::CreateExplosion(cellX * CELL_SIZE + CELL_SIZE / 2, cellY * CELL_SIZE + CELL_SIZE / 2, true);
+					const uint8_t urnExplosionColour = 0x70;
+					ParticleSystemManager::CreateExplosion(cellX * CELL_SIZE + CELL_SIZE / 2, cellY * CELL_SIZE + CELL_SIZE / 2, urnExplosionColour, false);
 
 					switch ((Random() % 5))
 					{
@@ -126,7 +127,9 @@ void ProjectileManager::Update()
 
 			if (hitAnything)
 			{
-				ParticleSystemManager::CreateExplosion(p.x - deltaX, p.y - deltaY, true);
+			    uint8_t projectileExplosionColour = 0x90;
+				ParticleSystem* particles = ParticleSystemManager::CreateExplosion(p.x - deltaX, p.y - deltaY, projectileExplosionColour, true);
+				particles->life = 20;
 				p.life = 0;
 			}
 		}

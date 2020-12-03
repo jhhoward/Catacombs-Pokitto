@@ -26,6 +26,7 @@ void Game::Init()
 	ParticleSystemManager::Init();
 	ProjectileManager::Init();
 	EnemyManager::Init();
+	Renderer::Init();
 }
 
 void Game::StartGame()

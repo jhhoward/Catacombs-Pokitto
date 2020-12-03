@@ -247,14 +247,14 @@ void Map::DrawMinimap()
 			    uint8_t colour = COLOUR_BLACK;
 			    if(cellX < width && cellY < height)
 			    {
-			        if(IsSolid(cellX, cellY))
+			        //if(IsSolid(cellX, cellY))
 			        {
-			            colour = 3;
+			          //  colour = 0x8f;
 			        }
-			        else
+			        //else
 			        {
 			            //colour = 2;
-			            colour = GetLightingAtCell(cellX, cellY) + 16;
+			            colour = GetLightingAtCell(cellX, cellY) | 0xf0;
 			        }
 			    }
 				Platform::PutPixel(outX, outY, colour);
@@ -278,7 +278,23 @@ void Map::GenerateLightMap()
         {
             if(GetCell(x, y) == CellType::Torch)
             {
-                AddLight(x, y, 5);
+                constexpr int torchReach = 5;
+        		if (Map::IsSolid(x - 1, y))
+        		{
+        			AddLight(x * CELL_SIZE + CELL_SIZE / 7, y * CELL_SIZE + CELL_SIZE / 2, torchReach);
+        		}
+        		else if (Map::IsSolid(x + 1, y))
+        		{
+        			AddLight(x * CELL_SIZE + 6 * CELL_SIZE / 7, y * CELL_SIZE + CELL_SIZE / 2, torchReach);
+        		}
+        		else if (Map::IsSolid(x, y - 1))
+        		{
+        			AddLight(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE / 7, torchReach);
+        		}
+        		else if (Map::IsSolid(x, y + 1))
+        		{
+        			AddLight(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + 6 * CELL_SIZE / 7, torchReach);
+        		}
             }
             else if(IsSolid(x, y))
             {
@@ -297,16 +313,17 @@ void increment(uint8_t& a, uint8_t b, uint8_t max)
         a = max;
 }
 
-#include <stdio.h>
 
 void Map::AddDynamicLight(int x, int y, int brightness)
 {
     if(brightness > 15)
         brightness = 15;
+        
+    int reach = 3;
     
     int tileX = x >> 8;
     int tileY = y >> 8;
-    for(int i = -2; i <= 2; i++)
+    for(int i = -reach; i <= reach; i++)
     {
         int tx = tileX + i;
         if(tx < 0 || tx >= width)
@@ -314,7 +331,7 @@ void Map::AddDynamicLight(int x, int y, int brightness)
         
         int sampleX = tx * CELL_SIZE + (CELL_SIZE / 2);
         int diffXSqr = (sampleX - x) * (sampleX - x);
-        for(int j = -2; j <= 2; j++)
+        for(int j = -reach; j <= reach; j++)
         {
             int ty = tileY + j;
             
@@ -342,11 +359,11 @@ void Map::AddDynamicLight(int x, int y, int brightness)
     }
 }
 
-void Map::AddLight(int x, int y, int reach)
+void Map::AddLight(int lx, int ly, int reach)
 {
-    int16_t lx = x * CELL_SIZE + CELL_SIZE / 2;
-    int16_t ly = y * CELL_SIZE + CELL_SIZE / 2;
-    
+    int x = (lx >> 8);
+    int y = (ly >> 8);
+
     for(int j = -reach; j <= reach; j++)
     {
         for(int i = -reach; i <= reach; i++)
@@ -406,7 +423,8 @@ uint8_t Map::SampleWorldLighting(int x, int y)
         }
         else
         {
-            top = (topRight * u + topLeft * (255 - u)) >> 8;
+            //top = u < 128 ? topLeft : topRight;
+            top = (topRight * u + topLeft * (256 - u)) >> 8;
         }
         
         if(bottomLeft == 0)
@@ -419,7 +437,8 @@ uint8_t Map::SampleWorldLighting(int x, int y)
         }
         else
         {
-            bottom = (bottomRight * u + bottomLeft * (255 - u)) >> 8;
+            //bottom = u < 128 ? bottomLeft : bottomRight;
+            bottom = (bottomRight * u + bottomLeft * (256 - u)) >> 8;
         }
         
         if(top == 0)
@@ -432,7 +451,8 @@ uint8_t Map::SampleWorldLighting(int x, int y)
         }
         else
         {
-            mid = (bottom * v + top * (255 - v)) >> 8;
+            //mid = v < 128 ? top : bottom;
+            mid = (bottom * v + top * (256 - v)) >> 8;
         }
         
         return mid;

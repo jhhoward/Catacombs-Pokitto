@@ -480,6 +480,9 @@
 		},
 		"\\Catacombs.bin.1.h": {
 			"sdcard": false
+		},
+		"\\Catacombs.eeprom": {
+			"sdcard": false
 		}
 	},
 	"ideVersion": 10000,
