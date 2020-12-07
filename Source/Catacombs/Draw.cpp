@@ -1726,8 +1726,9 @@ void Renderer::DrawHUD()
 
     DrawSprite(statusBarData, 0, DISPLAY_HEIGHT - 11);
 
-    Font::PrintInt(Game::player.hp, 10, 20, COLOUR_WHITE);
-    Font::PrintInt(Game::player.mana, 10, 55, COLOUR_WHITE);
+    Font::PrintInt(Game::player.hp, 10, 19, COLOUR_WHITE);
+    Font::PrintInt(Game::player.mana, 10, 54, COLOUR_WHITE);
+    Font::PrintInt(Game::floor, 10, 89, COLOUR_WHITE);
 //	DrawBar(DISPLAY_HEIGHT - 16, heartSpriteData, Game::player.hp, Game::player.maxHP);
 	//DrawBar(DISPLAY_HEIGHT - 8, manaSpriteData, Game::player.mana, Game::player.maxMana);
 
@@ -1735,7 +1736,7 @@ void Renderer::DrawHUD()
 		DrawDamageIndicator();
 
 	if (Game::displayMessage)
-		Font::PrintString(Game::displayMessage, 0, 0, COLOUR_BLACK, COLOUR_WHITE);
+		Font::PrintString(Game::displayMessage, 0, 0, COLOUR_WHITE, 0x7f);
 
     int offset = Game::player.damageTime / 3;
     if(offset > 3)
@@ -1797,9 +1798,12 @@ void Renderer::Render()
 	
 	RenderQueuedDrawables();
 	
-	DrawWeapon();
-
-	DrawHUD();
+	if(Game::GetState() != Game::State::Menu)
+	{
+    	DrawWeapon();
+    
+    	DrawHUD();
+	}
 
 	//Map::DrawMinimap();
 }

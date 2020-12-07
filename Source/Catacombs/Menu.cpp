@@ -14,10 +14,13 @@ void Menu::Init()
 
 void Menu::Draw()
 {
-	Platform::FillScreen(COLOUR_BLACK);
-	Font::PrintString(PSTR("CATACOMBS OF THE DAMNED"), 2, 18, COLOUR_WHITE);
-	Font::PrintString(PSTR("by @jameshhoward"), 7, 32, COLOUR_WHITE);
-	Font::PrintString(PSTR("Start"), 4, 24, COLOUR_WHITE);
+	//Platform::FillScreen(COLOUR_BLACK);
+	//Font::PrintString(PSTR("CATACOMBS OF THE DAMNED"), 2, 18, COLOUR_WHITE);
+	Font::PrintString(PSTR("Code by @jameshhoward"), 9, 13, COLOUR_WHITE);
+	Font::PrintString(PSTR("Art by Stephane C"), 10, 17, COLOUR_WHITE);
+	//Font::PrintString(PSTR("Press A to Start"), 7, 24, COLOUR_WHITE);
+	
+	/* Disabled sound option
 	Font::PrintString(PSTR("Sound:"), 5, 24, COLOUR_WHITE);
 
 	if (Platform::IsAudioEnabled())
@@ -30,10 +33,14 @@ void Menu::Draw()
 	}
 	
 	Font::PrintString(PSTR(">"), 4 + selection, 16, COLOUR_WHITE);
+	*/
 	
-	const uint8_t* torchSprite = Game::globalTickFrame & 4 ? torchSpriteData1 : torchSpriteData2;
+	/*const uint8_t* torchSprite = Game::globalTickFrame & 4 ? torchSpriteData1 : torchSpriteData2;
 	Renderer::DrawScaled(torchSprite, 0, 10, 9, 255);
 	Renderer::DrawScaled(torchSprite, DISPLAY_WIDTH - 18, 10, 9, 255);
+	*/
+	
+	Renderer::DrawSprite(logoData, 17, 21);
 }
 
 void Menu::Tick()
@@ -43,6 +50,8 @@ void Menu::Tick()
 	// Spin the RNG to have a unique(ish) starting level
 	Random();
 
+/*
+    // Disabled sound option    
 	if ((Platform::GetInput() & INPUT_DOWN) && !(lastInput & INPUT_DOWN))
 	{
 		selection = !selection;
@@ -51,6 +60,7 @@ void Menu::Tick()
 	{
 		selection = !selection;
 	}
+*/
 
 	if ((Platform::GetInput() & (INPUT_A | INPUT_B)) && !(lastInput & (INPUT_A | INPUT_B)))
 	{
@@ -91,8 +101,8 @@ void Menu::TickEnteringLevel()
 void Menu::DrawEnteringLevel()
 {
 	Platform::FillScreen(COLOUR_BLACK);
-	Font::PrintString(PSTR("Entering floor"), 3, 30, COLOUR_WHITE);
-	Font::PrintInt(Game::floor, 3, 90, COLOUR_WHITE);
+	Font::PrintString(PSTR("Entering floor"), 5, 21, COLOUR_WHITE);
+	Font::PrintInt(Game::floor, 5, 81, COLOUR_WHITE);
 }	
 
 void Menu::TickGameOver()
@@ -117,63 +127,63 @@ void Menu::TickGameOver()
 void Menu::DrawGameOver()
 {
 	Platform::FillScreen(COLOUR_BLACK);
-	Font::PrintString(PSTR("GAME OVER"), 0, 64 - 18, COLOUR_WHITE);
+	Font::PrintString(PSTR("GAME OVER"), 0, DISPLAY_WIDTH / 2 - 18, COLOUR_WHITE);
 
 	switch (Game::stats.killedBy)
 	{
 	case EnemyType::None:
-		Font::PrintString(PSTR("You escaped the catacombs!"), 1, 12, COLOUR_WHITE);
+		Font::PrintString(PSTR("You escaped the catacombs!"), 1, 4, COLOUR_WHITE);
 		break;
 	case EnemyType::Mage:
-		Font::PrintString(PSTR("Killed by a mage on level"), 1, 8, COLOUR_WHITE);
-		Font::PrintInt(Game::floor, 1, 112, COLOUR_WHITE);
+		Font::PrintString(PSTR("Killed by a mage"), 1, 24, COLOUR_WHITE);
 		break;
 	case EnemyType::Skeleton:
-		Font::PrintString(PSTR("Killed by a knight on level"), 1, 4, COLOUR_WHITE);
-		Font::PrintInt(Game::floor, 1, 116, COLOUR_WHITE);
+		Font::PrintString(PSTR("Killed by a knight"), 1, 20, COLOUR_WHITE);
 		break;
 	case EnemyType::Bat:
-		Font::PrintString(PSTR("Killed by a bat on level"), 1, 10, COLOUR_WHITE);
-		Font::PrintInt(Game::floor, 1, 110, COLOUR_WHITE);
+		Font::PrintString(PSTR("Killed by a bat"), 1, 26, COLOUR_WHITE);
 		break;
 	case EnemyType::Spider:
-		Font::PrintString(PSTR("Killed by a spider on level"), 1, 4, COLOUR_WHITE);
-		Font::PrintInt(Game::floor, 1, 116, COLOUR_WHITE);
+		Font::PrintString(PSTR("Killed by a spider"), 1, 20, COLOUR_WHITE);
 		break;
 	}
 	
-	Font::PrintString(PSTR("LOOT:"), 2, 20, COLOUR_WHITE);
+	Font::PrintString(PSTR("LOOT:"), 2, 16, COLOUR_WHITE);
 
-	constexpr uint8_t firstRow = 21;
-	constexpr uint8_t secondRow = 38;
+	constexpr uint8_t firstRow = 22;
+	constexpr uint8_t secondRow = 40;
+	constexpr int firstColumn = 0;
+	constexpr int secondColumn = 28;
+	constexpr int thirdColumn = 62;
+	constexpr int fourthColumn = 88;
 
-	Renderer::DrawScaled(chestSpriteData, 0, firstRow, 9, 255);
-	Font::PrintInt(Game::stats.chestsOpened, 4, 18, COLOUR_WHITE);
+	Renderer::DrawScaled(chestSpriteData, firstColumn, firstRow, 8, 255);
+	Font::PrintInt(Game::stats.chestsOpened, 4, firstColumn + 18, COLOUR_WHITE);
 
-	Renderer::DrawScaled(crownSpriteData, 0, secondRow, 9, 255);
-	Font::PrintInt(Game::stats.crownsCollected, 6, 18, COLOUR_WHITE);
+	Renderer::DrawScaled(crownSpriteData, firstColumn, secondRow, 8, 255);
+	Font::PrintInt(Game::stats.crownsCollected, 6, firstColumn + 18, COLOUR_WHITE);
 
-	Renderer::DrawScaled(scrollSpriteData, 30, firstRow, 9, 255);
-	Font::PrintInt(Game::stats.scrollsCollected, 4, 48, COLOUR_WHITE);
+	Renderer::DrawScaled(scrollSpriteData, secondColumn, firstRow, 8, 255);
+	Font::PrintInt(Game::stats.scrollsCollected, 4, secondColumn + 18, COLOUR_WHITE);
 
-	Renderer::DrawScaled(coinsSpriteData, 30, secondRow, 9, 255);
-	Font::PrintInt(Game::stats.coinsCollected, 6, 48, COLOUR_WHITE);
+	Renderer::DrawScaled(coinsSpriteData, secondColumn, secondRow, 8, 255);
+	Font::PrintInt(Game::stats.coinsCollected, 6, secondColumn + 18, COLOUR_WHITE);
 
 	///
 	int offset = (Game::globalTickFrame & 8) == 0 ? 256 : 0;
-	Font::PrintString(PSTR("KILLS:"), 2, 84, COLOUR_WHITE);
+	Font::PrintString(PSTR("KILLS:"), 2, 76, COLOUR_WHITE);
 
-	Renderer::DrawScaled(skeletonSpriteData + offset, 66, firstRow, 9, 255);
-	Font::PrintInt(Game::stats.enemyKills[(int)EnemyType::Skeleton], 4, 84, COLOUR_WHITE);
+	Renderer::DrawScaled(skeletonSpriteData + offset, thirdColumn, firstRow, 8, 255);
+	Font::PrintInt(Game::stats.enemyKills[(int)EnemyType::Skeleton], 4, thirdColumn + 18, COLOUR_WHITE);
 
-	Renderer::DrawScaled(mageSpriteData + offset, 66, secondRow, 9, 255);
-	Font::PrintInt(Game::stats.enemyKills[(int)EnemyType::Mage], 6, 84, COLOUR_WHITE);
+	Renderer::DrawScaled(mageSpriteData + offset, thirdColumn, secondRow, 8, 255);
+	Font::PrintInt(Game::stats.enemyKills[(int)EnemyType::Mage], 6, thirdColumn + 18, COLOUR_WHITE);
 
-	Renderer::DrawScaled(batSpriteData + offset, 96, firstRow, 9, 255, true);
-	Font::PrintInt(Game::stats.enemyKills[(int)EnemyType::Bat], 4, 114, COLOUR_WHITE);
+	Renderer::DrawScaled(batSpriteData + offset, fourthColumn, firstRow, 8, 255, true);
+	Font::PrintInt(Game::stats.enemyKills[(int)EnemyType::Bat], 4, fourthColumn + 18, COLOUR_WHITE);
 
-	Renderer::DrawScaled(spiderSpriteData + offset, 96, secondRow, 9, 255);
-	Font::PrintInt(Game::stats.enemyKills[(int)EnemyType::Spider], 6, 114, COLOUR_WHITE);
+	Renderer::DrawScaled(spiderSpriteData + offset, fourthColumn, secondRow, 8, 255);
+	Font::PrintInt(Game::stats.enemyKills[(int)EnemyType::Spider], 6, fourthColumn + 18, COLOUR_WHITE);
 
 	// Calculate final score here
 	uint16_t finalScore = 0;
@@ -201,16 +211,20 @@ void Menu::DrawGameOver()
 	finalScore += Game::stats.enemyKills[(int)EnemyType::Bat] * batKillBonus;
 	finalScore += Game::stats.enemyKills[(int)EnemyType::Spider] * spiderKillBonus;
 
-	Font::PrintString(PSTR("FINAL SCORE:"), 7, 20, COLOUR_WHITE);
-	Font::PrintInt(finalScore, 7, 72, COLOUR_WHITE);
+    if(Game::stats.killedBy != EnemyType::None)
+    {
+    	Font::PrintString(PSTR("Reached level "), 8, 16, COLOUR_WHITE);
+    	Font::PrintInt(Game::floor, 8, 76, COLOUR_WHITE);
+    }
+	
+	Font::PrintString(PSTR("FINAL SCORE:"), 10, 20, COLOUR_WHITE);
+	Font::PrintInt(finalScore, 10, 72, COLOUR_WHITE);
 }
-
-#include <stdio.h>
 
 void Menu::FadeOut()
 {
 	constexpr uint16_t toggleMask = 0x1f6e;
-	constexpr int fizzlesPerFrame = 255;
+	constexpr int fizzlesPerFrame = 128;
 	constexpr uint16_t startValue = 1;
 
 	if (fizzleFade == 0)
@@ -229,7 +243,8 @@ void Menu::FadeOut()
 
 		uint8_t x = (uint8_t)(fizzleFade & 0x7f);
 		uint8_t y = (uint8_t)(fizzleFade >> 7);
-		Platform::PutPixel(x, y, COLOUR_BLACK);
+		Platform::PutPixel(x, y, 0x67);
+		Platform::PutPixel(x, y + 64, 0x67);
 
 		if (fizzleFade == startValue)
 		{

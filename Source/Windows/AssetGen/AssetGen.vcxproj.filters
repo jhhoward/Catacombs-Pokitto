@@ -18,13 +18,16 @@
     <ClCompile Include="AssetGen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Arduboy3D\lodepng.cpp">
+    <ClCompile Include="..\Catacombs\lodepng.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Arduboy3D\lodepng.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="..\Catacombs\lodepng.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OriginalSounds.inc.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

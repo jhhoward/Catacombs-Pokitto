@@ -44,6 +44,7 @@ public:
 	static void GameOver();
 	
 	static void SwitchState(State newState);
+	static State GetState() { return state; }
 
 	static void ShowMessage(const char* message);
 

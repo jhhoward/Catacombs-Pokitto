@@ -12,8 +12,8 @@
 #define USE_ROTATE_BOB 0
 #define STRAFE_TILT 14
 #define ROTATE_TILT 3
-
-const char SignMessage1[] PROGMEM = "Abandon all hope ye who enter!";
+                                     
+const char SignMessage1[] PROGMEM = "Abandon hope ye who enter!";
 
 void Player::Init()
 {
@@ -47,7 +47,7 @@ void Player::Fire()
 
 		ProjectileManager::FireProjectile(this, projectileX, projectileY, angle);
 		mana -= manaFireCost;
-		Platform::PlaySound(Sounds::Attack);
+		Platform::PlaySound(Sounds::Attack, Sounds::Attack_length);
 	}
 }
 
@@ -213,25 +213,25 @@ void Player::Tick()
 			else
 				hp += potionStrength;
 			Map::SetCell(cellX, cellY, CellType::Empty);
-			Platform::PlaySound(Sounds::Pickup);
+			Platform::PlaySound(Sounds::Pickup, Sounds::Pickup_length);
 			Game::ShowMessage(PSTR("Drank a potion of healing"));
 		}
 		break;
 	case CellType::Coins:
 		Map::SetCell(cellX, cellY, CellType::Empty);
-		Platform::PlaySound(Sounds::Pickup);
+		Platform::PlaySound(Sounds::Pickup, Sounds::Pickup_length);
 		Game::ShowMessage(PSTR("Found some gold coins"));
 		Game::stats.coinsCollected++;
 		break;
 	case CellType::Crown:
 		Map::SetCell(cellX, cellY, CellType::Empty);
-		Platform::PlaySound(Sounds::Pickup);
+		Platform::PlaySound(Sounds::Pickup, Sounds::Pickup_length);
 		Game::ShowMessage(PSTR("Found a jewel encrusted crown"));
 		Game::stats.crownsCollected++;
 		break;
 	case CellType::Scroll:
 		Map::SetCell(cellX, cellY, CellType::Empty);
-		Platform::PlaySound(Sounds::Pickup);
+		Platform::PlaySound(Sounds::Pickup, Sounds::Pickup_length);
 		Game::ShowMessage(PSTR("Found an ancient scroll"));
 		Game::stats.scrollsCollected++;
 		break;
@@ -260,7 +260,7 @@ bool Player::CheckCollisions()
 	case CellType::Chest:
 		Map::SetCell(lookAheadCellX, lookAheadCellY, CellType::ChestOpened);
 		ParticleSystemManager::CreateExplosion(lookAheadX, lookAheadY, chestCoinsColour, false);
-		Platform::PlaySound(Sounds::Pickup);
+		Platform::PlaySound(Sounds::Pickup, Sounds::Pickup_length);
 		Game::ShowMessage(PSTR("Found a chest full of treasure!"));
 		Game::stats.chestsOpened++;
 		break;
@@ -312,12 +312,12 @@ void Player::Damage(uint8_t damageAmount)
 	
 	if (hp <= damageAmount)
 	{
-		Platform::PlaySound(Sounds::PlayerDeath);
+		Platform::PlaySound(Sounds::PlayerDeath, Sounds::PlayerDeath_length);
 		hp = 0;
 	}
 	else
 	{
-		Platform::PlaySound(Sounds::Ouch);
+		Platform::PlaySound(Sounds::Ouch, Sounds::Ouch_length);
 		hp -= damageAmount;
 	}
 }

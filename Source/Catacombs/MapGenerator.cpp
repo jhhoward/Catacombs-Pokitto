@@ -615,7 +615,7 @@ void MapGenerator::Generate()
 	    
 	    while(attempts > 0 && toSpawn > 0)
 	    {
-	        CellType cellType = (CellType)((int) CellType::BrickWall + 1 + (Random() % 3));
+	        CellType cellType = (CellType)((int) CellType::BrickWall + 1 + (Random() % 5));
 			uint8_t x = Random() % Map::width;
 			uint8_t y = Random() % Map::height;
 			uint8_t minSpacing = 5;

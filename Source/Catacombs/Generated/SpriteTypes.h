@@ -58,6 +58,8 @@ extern const uint8_t handSpriteData1[];
 extern const uint8_t handSpriteData2[];
 // Generated from Images/hudc.png
 extern const uint8_t statusBarData[];
+// Generated from Images/logoc.png
+extern const uint8_t logoData[];
 // Generated from Images/textures.png
 constexpr uint8_t wallTextureData_numTextures = 1;
 extern const uint16_t wallTextureData[];

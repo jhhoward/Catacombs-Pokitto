@@ -55,13 +55,9 @@ uint8_t* Platform::GetScreenBuffer()
     return Pokitto::Display::getBuffer();
 }
 
-#include "Generated/AudioData.inc.h"
-
-void Platform::PlaySound(const uint16_t* audioPattern)
+void Platform::PlaySound(const uint8_t* audioPattern, int length)
 {
-    //Pokitto::Sound::playSFX(fireballSound, fireballSound_length);
-    //Pokitto::Sound::playSFX(sfx_3_jump, sfx_3_jump_length);
- //   Pokitto::Sound::playSFX(wave, sizeof(wave));
+    Pokitto::Sound::playSFX(audioPattern, length);
 }
 
 bool Platform::IsAudioEnabled()

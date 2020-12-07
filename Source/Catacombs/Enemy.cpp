@@ -82,14 +82,14 @@ void Enemy::Damage(uint8_t amount)
 	{
 		Game::stats.enemyKills[(int)type]++;
 		type = EnemyType::None;
-		Platform::PlaySound(Sounds::Kill);
+		Platform::PlaySound(Sounds::Kill, Sounds::Kill_length);
 		uint8_t enemyExplosionColour = 0x60;
 		ParticleSystemManager::CreateExplosion(x, y, enemyExplosionColour, false);
 	}
 	else
 	{
 		hp -= amount;
-		Platform::PlaySound(Sounds::Hit);
+		Platform::PlaySound(Sounds::Hit, Sounds::Hit_length);
 		state = EnemyState::Stunned;
 		frameDelay = GetArchetype()->GetStunDuration();
 	}
@@ -340,7 +340,7 @@ void Enemy::Tick()
 	case EnemyState::Idle:
 		if (Map::IsClearLine(x, y, Game::player.x, Game::player.y))
 		{
-			Platform::PlaySound(Sounds::SpotPlayer);
+			Platform::PlaySound(Sounds::SpotPlayer, Sounds::SpotPlayer_length);
 			state = EnemyState::Moving;
 		}
 		break;
@@ -351,7 +351,7 @@ void Enemy::Tick()
 		{
 			if (TryFireProjectile())
 			{
-				Platform::PlaySound(Sounds::Shoot);
+				Platform::PlaySound(Sounds::Shoot, Sounds::Shoot_length);
 				state = EnemyState::Attacking;
 				frameDelay = GetArchetype()->GetAttackDuration();
 			}

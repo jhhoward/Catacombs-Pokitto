@@ -8,7 +8,7 @@ public:
 	static uint8_t GetInput(void);
 	static uint8_t* GetScreenBuffer(); 
 
-	static void PlaySound(const uint16_t* audioPattern);
+	static void PlaySound(const uint8_t* audioPattern, int length);
 	static bool IsAudioEnabled();
 	static void SetAudioEnabled(bool isEnabled);
 

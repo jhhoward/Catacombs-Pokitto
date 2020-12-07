@@ -1,8 +1,11 @@
 #include <stdint.h>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <vector>
+#include <list>
 #include "../Catacombs/lodepng.h"
+#include "OriginalSounds.inc.h"
 
 using namespace std;
 
@@ -767,6 +770,90 @@ struct wav_hdr_s {
 	uint32_t Subchunk2Size;  /* Sampled data length	*/
 };
 
+void EncodeSound(ofstream& ofs, const uint16_t* data, const char* varName)
+{
+	list<uint8_t> samples;
+
+	const uint16_t* ptr = data;
+	constexpr int sampleRate = 8000;
+	
+	uint8_t output = 0;
+
+	while (*ptr != TONES_END)
+	{
+		uint16_t frequency = *ptr++;
+		uint16_t duration = *ptr++;
+
+		int numSamples = (duration * sampleRate) / 1000;
+		int freqCounter = 0;
+		for (int n = 0; n < numSamples; n++)
+		{
+			if (frequency != 0)
+			{
+				/*double PI = 3.141592;
+				double wave = ((double)sampleRate / frequency);
+				double amplitude = sin(n * PI * 2 / wave);
+				output = (uint8_t)(amplitude * 127 + 127);
+				*/
+				
+				freqCounter++;
+				int flip = (sampleRate / frequency);
+				output = 255 - (freqCounter * 255 / flip);
+				if (freqCounter >= flip)
+				{
+					freqCounter = 0;
+				}
+
+				/*freqCounter++;
+				int flip = (sampleRate / frequency);
+				if (freqCounter >= flip)
+				{
+					output = output == 0 ? 255 : 0;
+					freqCounter = 0;
+				}*/
+			}
+			samples.push_back(output);
+		}
+	}
+
+	ofs << "const int " << varName << "_length = " << samples.size() << ";" << endl;
+	ofs << "const uint8_t " << varName << "[] = {" << endl;
+	for (uint8_t& sample : samples)
+	{
+		ofs << ((int)sample) << ",";
+	}
+	ofs << "};" << endl << endl;
+
+	{
+		wav_hdr_s wav_hdr;
+		wav_hdr.AudioFormat = 1; //PCM
+		wav_hdr.bitsPerSample = 8;
+		wav_hdr.blockAlign = 1;
+		wav_hdr.ChunkSize = sizeof(wav_hdr) - 4;
+		memcpy(&wav_hdr.WAVE[0], "WAVE", 4);
+		memcpy(&wav_hdr.fmt[0], "fmt ", 4);
+		wav_hdr.NumOfChan = 1;
+		wav_hdr.bytesPerSec = sampleRate * (uint32_t)(wav_hdr.bitsPerSample >> 3) * (uint32_t)wav_hdr.NumOfChan;
+		memcpy(&wav_hdr.RIFF[0], "RIFF", 4);
+		wav_hdr.Subchunk1Size = 16;
+		wav_hdr.SamplesPerSec = sampleRate;
+		memcpy(&wav_hdr.Subchunk2ID[0], "data", 4);
+		wav_hdr.Subchunk2Size = samples.size();
+
+		ostringstream oss;
+		oss << varName << ".wav";
+
+		ofstream wavFs(oss.str(), ios::binary);
+		wavFs.write((char*)&wav_hdr, sizeof(wav_hdr));
+
+		for (uint8_t& sample : samples)
+		{
+			wavFs.write((char*)(&sample), 1);
+		}
+
+		wavFs.close();
+	}
+}
 
 void EncodeWav(ofstream& ofs, const char* filename, const char* varName)
 {
@@ -836,7 +923,15 @@ int main(int argc, char* argv[])
 
 	ofstream audioFile;
 	audioFile.open(audioDataHeaderOutputPath);
-	EncodeWav(audioFile, "Sounds/fireball.wav", "fireballSound");
+	//EncodeWav(audioFile, "Sounds/fireball.wav", "fireballSound");
+	EncodeSound(audioFile, Sounds::Attack, "Sounds::Attack");
+	EncodeSound(audioFile, Sounds::Hit, "Sounds::Hit");
+	EncodeSound(audioFile, Sounds::Kill, "Sounds::Kill");
+	EncodeSound(audioFile, Sounds::Ouch, "Sounds::Ouch");
+	EncodeSound(audioFile, Sounds::Pickup, "Sounds::Pickup");
+	EncodeSound(audioFile, Sounds::PlayerDeath, "Sounds::PlayerDeath");
+	EncodeSound(audioFile, Sounds::Shoot, "Sounds::Shoot");
+	EncodeSound(audioFile, Sounds::SpotPlayer, "Sounds::SpotPlayer");
 	audioFile.close();
 
 	ofstream dataFile;
@@ -888,6 +983,7 @@ int main(int argc, char* argv[])
 	EncodeColourSprite2D(typeFile, dataFile, "Images/hand2c.png", "handSpriteData2");
 
 	EncodeColourSprite2D(typeFile, dataFile, "Images/hudc.png", "statusBarData");
+	EncodeColourSprite2D(typeFile, dataFile, "Images/logoc.png", "logoData");
 
 	//EncodeSprite2D(typeFile, dataFile, "Images/hand1.png", "handSpriteData1");
 	//EncodeSprite2D(typeFile, dataFile, "Images/hand2.png", "handSpriteData2");

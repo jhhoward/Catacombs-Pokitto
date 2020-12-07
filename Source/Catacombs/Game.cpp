@@ -27,6 +27,7 @@ void Game::Init()
 	ProjectileManager::Init();
 	EnemyManager::Init();
 	Renderer::Init();
+	Map::LoadMenuMap();
 }
 
 void Game::StartGame()
@@ -43,6 +44,11 @@ void Game::SwitchState(State newState)
 	{
 		state = newState;
 		menu.ResetTimer();
+		
+		if(newState == State::Menu)
+		{
+		    Map::LoadMenuMap();
+		}
 	}
 }
 
@@ -86,7 +92,15 @@ void Game::Draw()
 	switch(state)
 	{
 		case State::Menu:
+		{
+		    Renderer::camera.x = CELL_SIZE * 1 + 160;// + globalTickFrame * 8;
+		    Renderer::camera.y = CELL_SIZE * 3 + CELL_SIZE / 2;
+		    Renderer::camera.angle = 0;
+		    Renderer::camera.tilt = 0;
+		    Renderer::camera.bob = 0;
+		    Renderer::Render();
 			menu.Draw();
+		}
 			break;
 		case State::EnteringLevel:
 			menu.DrawEnteringLevel();

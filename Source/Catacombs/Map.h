@@ -31,6 +31,8 @@ enum class CellType : uint8_t
 	WallDecoration1,
 	WallDecoration2,
 	WallDecoration3,
+	WallDecoration4,
+	WallDecoration5,
 	
 	FirstCollidableCell = Urn,
 	FirstSolidCell = BrickWall
@@ -57,6 +59,8 @@ public:
 
 	static bool IsClearLine(int16_t x1, int16_t y1, int16_t x2, int16_t y2);
 	
+	static void LoadMenuMap();
+	
 	static void RevertToStaticLightMap();
 	static void GenerateLightMap();
 	static void AddLight(int x, int y, int reach);
@@ -69,4 +73,8 @@ private:
 	static uint8_t lightMap[width * height];
 	static uint8_t staticLightMap[width * height];
 	
+	static constexpr int menuMapWidth = 8;
+    static constexpr int menuMapHeight = 8;
+    static const uint8_t menuMap[menuMapWidth * menuMapHeight];
+
 };

@@ -89,11 +89,11 @@ void ProjectileManager::Update()
 						Map::SetCell(cellX, cellY, CellType::Coins);
 						break;
 					}
-					Platform::PlaySound(Sounds::Kill);
+					Platform::PlaySound(Sounds::Kill, Sounds::Kill_length);
 				}
 				else
 				{
-					Platform::PlaySound(Sounds::Hit);
+					Platform::PlaySound(Sounds::Hit, Sounds::Hit_length);
 				}
 
 				hitAnything = true;
