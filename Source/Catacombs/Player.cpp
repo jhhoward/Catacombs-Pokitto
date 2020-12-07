@@ -261,7 +261,7 @@ bool Player::CheckCollisions()
 		Map::SetCell(lookAheadCellX, lookAheadCellY, CellType::ChestOpened);
 		ParticleSystemManager::CreateExplosion(lookAheadX, lookAheadY, chestCoinsColour, false);
 		Platform::PlaySound(Sounds::Pickup, Sounds::Pickup_length);
-		Game::ShowMessage(PSTR("Found a chest full of treasure!"));
+		Game::ShowMessage(PSTR("Found a chest full of gold!"));
 		Game::stats.chestsOpened++;
 		break;
 	case CellType::Sign:
